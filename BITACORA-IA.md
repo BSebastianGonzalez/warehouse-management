@@ -12,6 +12,8 @@ Acepté con ajuste: el umbral se evalúa sobre el total del producto (suma de to
 
 Quedó sin verificar: si conviene una segunda señal no bloqueante para "bodega en cero" aunque el total del producto esté sano, esto es una propuesta no resuelta.
 
+---
+
 # 2. Segunda peticion 
 
 Pedí: decidir si la concurrencia entre traslados simultáneos sobre el mismo producto y bodega se documenta como asunción o como ADR.
@@ -21,6 +23,8 @@ Me propuso: dejarla como una asunción simple, confiando en que el motor de base
 Decidí: subirla a ADR en vez de asunción, porque es una decisión de arquitectura (qué tan estricto debe ser el control de operaciones simultáneas y qué riesgo se acepta).
 
 Quedó sin verificar: cómo se comporta exactamente el motor de base de datos que se termine usando, y si hace falta configurarlo explícitamente para que coincida con lo que diga el ADR.
+
+---
 
 # Sesion 2 - 19/09/2026
 
