@@ -21,3 +21,75 @@ Me propuso: dejarla como una asunción simple, confiando en que el motor de base
 Decidí: subirla a ADR en vez de asunción, porque es una decisión de arquitectura (qué tan estricto debe ser el control de operaciones simultáneas y qué riesgo se acepta).
 
 Quedó sin verificar: cómo se comporta exactamente el motor de base de datos que se termine usando, y si hace falta configurarlo explícitamente para que coincida con lo que diga el ADR.
+
+# Sesion 2 - 19/09/2026
+
+## 1. Primera peticion
+
+**Pedí:** definir cómo debía comportarse un pedido cuando una de sus líneas no tiene suficiente inventario.
+
+**Propuso:** considerar estados intermedios como `PENDIENTE`, `PARCIAL` y `DESPACHADO`, permitiendo que un pedido pudiera quedar parcialmente atendido.
+
+**Rechacé y por qué:** se decidió que el sistema sería más sencillo si el pedido se resolviera inmediatamente al registrarse. Además, permitir despachos parciales complicaría la consistencia del inventario y el significado del estado del pedido.
+
+**Acepté:** el procesamiento de pedidos será síncrono. Al registrar un pedido, primero se valida si todas sus líneas pueden ser atendidas completamente utilizando una o varias bodegas. Si todas pueden atenderse, el pedido queda `DESPACHADO`. Si alguna línea no puede completarse, el pedido queda `CANCELADO`.
+
+No se permiten despachos parciales. En caso de cancelación, no se generan `DespachoDetalle` ni movimientos `SALIDA`. La cantidad que falta se almacena en `LineaPedido.cantidad_faltante`.
+
+**Quedó sin verificar:** el comportamiento exacto que deberá tener la transacción si, después de realizar la validación inicial, otra operación concurrente consume parte del stock antes de que el pedido realice sus descuentos.
+
+---
+
+## 2. Segunda peticion
+
+**Pedí:** determinar si `Existencia` debía ser la fuente principal del inventario o si los movimientos debían considerarse la fuente de verdad.
+
+**Propuso:** mantener `Existencia` como el saldo actual consultable y utilizar `Movimiento` como historial de los cambios realizados.
+
+**Acepté:** `Movimiento` será la fuente de verdad del inventario y `Existencia` funcionará como una proyección del saldo actual. Cada entrada, salida o traslado deberá registrar su movimiento correspondiente y actualizar la existencia dentro de la misma transacción.
+
+**Motivo de la decisión:** de esta forma se conserva un historial de las operaciones y es posible reconstruir el saldo a partir de los movimientos, mientras que `Existencia` permite realizar las consultas de stock de manera eficiente.
+
+**Quedó sin verificar:** la estrategia concreta para reconstruir el saldo a partir del historial y cómo se comprobará que la proyección `Existencia` no se desincronice respecto de los movimientos.
+
+---
+
+## 3. Tercera peticion
+
+**Pedí:** analizar qué debía ocurrir con los productos marcados como `descontinuado`, especialmente cuando se realiza un traslado entre bodegas.
+
+**Propuso:** permitir el traslado de productos descontinuados porque un traslado no representa necesariamente una entrada de inventario al sistema, sino un cambio de ubicación.
+
+**Rechacé y por qué:** se interpretó que recibir el producto en la bodega de destino constituye una nueva entrada en esa bodega. Permitir el traslado permitiría incrementar la existencia del producto en otra ubicación, contradiciendo la regla de que un producto descontinuado no admite nuevas entradas.
+
+**Acepté:** un producto descontinuado puede mantener las existencias que ya posee y puede tener operaciones de salida, incluyendo despachos de pedidos, pero no puede recibir nuevas entradas. Por tanto, los traslados de productos descontinuados quedan rechazados.
+
+**Quedó sin verificar:** cómo deberá reflejarse esta restricción tanto en las validaciones del servicio como en las pruebas de los diferentes tipos de movimiento.
+
+---
+
+## 4. Cuarta peticion
+
+**Pedí:** definir las tecnologías y la estructura general del sistema considerando que el proyecto debe desarrollarse en un periodo corto.
+
+**Propuso:** utilizar un backend con Spring Boot y una base de datos relacional, dejando abierta la posibilidad de utilizar diferentes tecnologías para la interfaz.
+
+**Acepté:** se decidió utilizar Java con Spring Boot para el backend, MySQL para persistencia y React para la interfaz. El frontend se comunicará con el backend mediante una API REST.
+
+**Motivo de la decisión:** se busca utilizar una arquitectura conocida, reducir el riesgo técnico durante el tiempo disponible y mantener separadas la interfaz, las reglas de negocio y la persistencia.
+
+**Quedó sin verificar:** la configuración concreta de Spring Data JPA, la conexión con MySQL y la estructura definitiva de los endpoints REST.
+
+---
+
+## 5. Quinta peticion
+
+**Pedí:** determinar cómo organizar el backend para evitar mezclar las reglas de negocio con los controladores y el acceso a la base de datos.
+
+**Propuso:** una arquitectura monolítica separada en las capas `Controller`, `Service` y `Repository`, organizada por dominios funcionales.
+
+**Acepté:** se utilizará un monolito modular con paquetes orientados al dominio, como `producto`, `bodega`, `movimiento` y `pedido`. Los `Controller` se encargarán de recibir las solicitudes HTTP, los `Service` contendrán las reglas de negocio y los `Repository` gestionarán la persistencia mediante Spring Data JPA.
+
+**Rechacé:** utilizar microservicios, debido a que introducirían complejidad adicional sin ser necesarios para el alcance del sistema.
+
+**Quedó sin verificar:** la estructura concreta de paquetes y clases una vez que comience la implementación del backend.
