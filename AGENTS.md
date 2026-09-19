@@ -287,4 +287,4 @@ No se debe depender únicamente de:
 
 La operación de descuento debe verificar que la cantidad disponible sigue siendo suficiente en el momento de realizar la actualización.
 
-Si una operación de un pedido falla al descontar una existencia debido a concurrencia, no debe quedar un pedido parcialmente aplicado. La transacción completa debe revertirse. Mayor informacion en docs\adr\004-concurrency_control.md
+Si una operación de un pedido falla al descontar una existencia debido a concurrencia, no debe quedar un pedido parcialmente aplicado. La transacción completa debe revertirse. Mayor informacion en docs\adr\004-concurrency.md
