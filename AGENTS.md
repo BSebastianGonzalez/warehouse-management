@@ -1,11 +1,98 @@
 # 1. Contexto del negocio
 
-La distribuidora maneja tres bodegas y puede despachar pedidos desde cualquiera de ellas. Actualmente el inventario se lleva en hojas de cálculo separadas por bodega y existen diferencias entre los saldos.
+Una distribuidora opera con tres bodegas desde las cuales despacha pedidos. Actualmente el inventario se lleva en hojas de cálculo independientes por bodega, lo que provoca que el saldo real nunca cuadre entre lo registrado y lo físico.
 
-El objetivo es construir un sistema que centralice el inventario y permita registrar y consultar las operaciones realizadas sobre los productos.
+El sistema debe centralizar el control de inventario multi-bodega, permitiendo registrar movimientos (entradas, salidas y traslados), procesar pedidos que pueden despacharse desde varias bodegas, y consultar en todo momento cuánto stock hay de cada producto y en qué bodega, señalando cuáles están por debajo del mínimo configurado.
 
+# 2. Alcance
 
-# 2. Modelo de datos
+**Dentro del alcance:**
+- Persistencia de datos (productos, bodegas, movimientos, pedidos, administradores).
+- Interfaz para operar el sistema (registrar productos/bodegas, registrar movimientos, registrar pedidos, consultar existencias).
+- Las reglas de negocio descritas abajo.
+- La consulta obligatoria de existencias por producto y bodega.
+- Login simple de un `Administrador` (sin roles ni permisos diferenciados).
+
+**Fuera de alcance:**
+- Autenticación avanzada (OAuth, JWT, recuperación de contraseña, roles).
+- Pagos reales.
+- Despliegue en producción.
+- Integraciones externas.
+- Gestión de clientes (no existe entidad `Cliente`; el `Administrador` registra los pedidos).
+
+# 3. Stack tecnológico
+
+- Backend: Java + Spring Boot.
+- Persistencia: Spring Data JPA / Hibernate.
+- Base de datos: MySQL.
+- Frontend: React.
+- Comunicación entre frontend y backend: API REST.
+- Gestión de dependencias: Maven.
+
+# 4 . Arquitectura del sistema
+
+# Arquitectura
+
+El backend utilizará una arquitectura monolítica modular con separación en tres capas principales:
+
+- Controller: recibe las solicitudes HTTP y delega la operación.
+- Service: contiene las reglas de negocio y coordina las operaciones.
+- Repository: gestiona el acceso a datos mediante Spring Data JPA.
+
+Los paquetes se organizarán principalmente por dominio funcional, por ejemplo:
+
+- producto/
+- bodega/
+- movimiento/
+- pedido/
+
+Las reglas de negocio no deben implementarse directamente en los Controllers. Mayor informacion puedes consultarla en docs\adr\003-architecture.md
+
+# 5. Reglas de negocio
+
+1. Un traslado entre bodegas descuenta la cantidad en la bodega de origen y la suma en la bodega de destino, sin que la existencia de origen quede negativa.
+2. Un pedido puede despacharse desde varias bodegas si ninguna tiene por sí sola la cantidad completa solicitada en una línea.
+3. Todo movimiento de inventario queda registrado (`Movimiento`) de forma que el saldo actual (`Existencia`) se pueda reconstruir sumando el historial.
+4. Un producto marcado como `descontinuado` admite salidas (incluyendo despachos de pedidos) pero no admite entradas nuevas, ya sea por `ENTRADA` o por `TRASLADO` (ver asunción correspondiente).
+
+## Requisitos funcionales
+
+### Gestión de catálogo
+- Registrar, consultar, actualizar productos (incluyendo `stock_minimo` y marcar/desmarcar `descontinuado`).
+- Registrar, consultar, actualizar bodegas.
+
+### Movimientos de inventario
+- Registrar una `ENTRADA` de producto en una bodega (rechazada si el producto está `descontinuado`).
+- Registrar una `SALIDA` de producto desde una bodega.
+- Registrar un `TRASLADO` entre dos bodegas (rechazado si el producto está `descontinuado`, y si la bodega de origen no tiene existencia suficiente).
+- Todo movimiento queda asociado al `Administrador` que lo registró.
+
+### Pedidos
+- Registrar un pedido con una o varias líneas (producto + cantidad solicitada).
+- El sistema evalúa el pedido de forma síncrona al registrarse (ver sección "Procesamiento de pedidos") y determina si queda `DESPACHADO` o `CANCELADO`.
+- Consultar el detalle de un pedido, incluyendo desde qué bodegas se despachó cada línea (`DespachoDetalle`) o, si fue cancelado, la `cantidad_faltante` por línea.
+
+### Consulta obligatoria
+- Mostrar, para cada producto, la existencia en cada bodega.
+- Señalar los productos cuya existencia total (suma de todas las bodegas) está por debajo de `stock_minimo`.
+
+### Autenticación
+- Login de `Administrador` mediante `username`/`password`.
+- Las operaciones de escritura (movimientos, pedidos) requieren sesión iniciada.
+
+## Invariantes del inventario
+
+- `Existencia.cantidad` nunca puede ser negativa.
+- La cantidad de un `Movimiento` siempre debe ser positiva.
+- Una `ENTRADA` tiene bodega destino y no tiene bodega origen.
+- Una `SALIDA` tiene bodega origen y no tiene bodega destino.
+- Un `TRASLADO` tiene bodega origen y bodega destino.
+- La bodega de origen y destino de un traslado deben ser diferentes.
+- Las modificaciones de `Existencia` no deben realizarse directamente desde un CRUD.
+- Todo cambio de inventario debe generar su `Movimiento` correspondiente.
+- La actualización de `Existencia` y el registro de `Movimiento` deben pertenecer a la misma transacción.
+
+# 6. Modelo de datos
 
 ## Entidades
 
@@ -177,10 +264,27 @@ Movimiento SALIDA
       ↓
 Actualización de Existencia
 ```
+Cuando un pedido no puede ser atendido completamente:
 
-## Regla de inventario
+- El pedido queda `CANCELADO`.
+- No se realiza ningún despacho parcial.
+- No se crean `DespachoDetalle`.
+- No se generan movimientos `SALIDA`.
+- No se modifica la existencia.
+- `cantidad_faltante` registra la cantidad que faltaba para completar cada línea afectada.
+
+## 7. Reglas de inventario
 
 `Movimiento` constituye la fuente de verdad del inventario, mientras que `Existencia` mantiene el saldo actual para facilitar las consultas.
 
-Las operaciones que descuentan existencias deben realizar el descuento de forma atómica y registrar el `Movimiento` correspondiente dentro de la misma transacción.
+Las operaciones que descuentan existencias deben validar y realizar el descuento de forma atómica.
 
+No se debe depender únicamente de:
+
+1. consultar la existencia;
+2. comprobar que hay suficiente stock;
+3. modificar la cantidad posteriormente.
+
+La operación de descuento debe verificar que la cantidad disponible sigue siendo suficiente en el momento de realizar la actualización.
+
+Si una operación de un pedido falla al descontar una existencia debido a concurrencia, no debe quedar un pedido parcialmente aplicado. La transacción completa debe revertirse. Mayor informacion en docs\adr\004-concurrency_control.md
