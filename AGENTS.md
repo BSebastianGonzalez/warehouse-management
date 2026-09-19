@@ -57,6 +57,44 @@ Las reglas de negocio no deben implementarse directamente en los Controllers. Ma
 
 ## Requisitos funcionales
 
+## Language and Naming Conventions
+
+* All source code must be written in English.
+* Use English for:
+
+  * Java class names.
+  * Interfaces and enums.
+  * Variables and method names.
+  * Package names.
+  * Database table and column names.
+  * REST endpoints.
+  * DTOs.
+  * Exception classes and messages.
+  * Code comments and JavaDoc.
+  * Test names and test descriptions.
+* Follow standard Java naming conventions:
+
+  * Classes and interfaces: `PascalCase`.
+  * Methods and variables: `camelCase`.
+  * Constants: `UPPER_SNAKE_CASE`.
+  * Packages: lowercase.
+* Domain concepts should use consistent English terminology throughout the codebase.
+
+Examples:
+
+* `Producto` → `Product`
+* `Bodega` → `Warehouse`
+* `Existencia` → `Stock`
+* `Movimiento` → `Movement`
+* `Pedido` → `Order`
+* `LineaPedido` → `OrderLine`
+* `DespachoDetalle` → `DispatchDetail`
+* `Administrador` → `Admin`
+* `cantidad` → `quantity`
+* `stock_minimo` → `minimumStock`
+
+Project documentation may remain in Spanish unless otherwise specified. The codebase itself must follow the English convention consistently.
+
 ### Gestión de catálogo
 - Registrar, consultar, actualizar productos (incluyendo `stock_minimo` y marcar/desmarcar `descontinuado`).
 - Registrar, consultar, actualizar bodegas.
