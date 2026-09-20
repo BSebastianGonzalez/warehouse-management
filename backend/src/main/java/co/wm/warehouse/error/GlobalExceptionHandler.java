@@ -11,6 +11,8 @@ import co.wm.warehouse.movement.InvalidMovementException;
 import co.wm.warehouse.admin.AdminAuthenticationException;
 import co.wm.warehouse.admin.DuplicateAdminUsernameException;
 import co.wm.warehouse.admin.UnauthorizedAdminException;
+import co.wm.warehouse.order.InvalidOrderException;
+import co.wm.warehouse.order.OrderNotFoundException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -39,13 +41,19 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
+    @ExceptionHandler(OrderNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handleOrderNotFound(OrderNotFoundException exception) {
+        return error(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
     @ExceptionHandler(DuplicateWarehouseNameException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleDuplicateWarehouseName(DuplicateWarehouseNameException exception) {
         return error(HttpStatus.CONFLICT, exception.getMessage());
     }
 
-    @ExceptionHandler({InsufficientStockException.class, InvalidMovementException.class})
+    @ExceptionHandler({InsufficientStockException.class, InvalidMovementException.class, InvalidOrderException.class})
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     public ApiError handleInvalidMovement(RuntimeException exception) {
         return error(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());

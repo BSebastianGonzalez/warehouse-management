@@ -120,10 +120,21 @@ Project documentation may remain in Spanish unless otherwise specified. The code
 
 ### Autenticación
 - Login de `Administrador` mediante `username`/`password`.
-- Las operaciones de escritura (movimientos, pedidos) requieren sesión iniciada.
-- El `Administrador` autenticado es el actor de toda operación que cambie o registre estado de negocio.
+- Las operaciones de escritura de movimientos y pedidos requieren sesión iniciada.
+- Producto y Bodega son operaciones públicas de catálogo y no requieren sesión ni asociación persistida con un administrador.
+- El `Administrador` autenticado es el actor de toda operación de movimiento o pedido que cambie o registre estado de inventario.
 - Cada `ENTRADA`, `SALIDA`, `TRASLADO`, pedido y despacho debe quedar trazablemente asociado al `Administrador` que lo realizó.
 - No se deben crear movimientos ni pedidos anónimos; las futuras operaciones de inventario o pedidos que modifiquen el estado también deben conservar esta asociación.
+
+### Frontend
+- La interfaz React vive en `frontend/` y usa Vite.
+- Las peticiones autenticadas deben enviar credenciales (`credentials: include`) para conservar la sesión HTTP.
+- En desarrollo, el frontend se ejecuta en `http://localhost:5173` y el backend en `http://localhost:8080`.
+- La URL base del backend se configura con `VITE_API_URL`; por defecto es `http://localhost:8080/api`.
+
+### Persistencia durante el alcance inicial
+- El entorno de desarrollo mantiene `spring.jpa.hibernate.ddl-auto=update` para evitar bloquear el trabajo funcional con migraciones antes de estabilizar el modelo.
+- Antes de un despliegue o de una evolución compartida del esquema se debe introducir Flyway con una migración inicial y cambiar `ddl-auto` a `validate`.
 
 ## Invariantes del inventario
 

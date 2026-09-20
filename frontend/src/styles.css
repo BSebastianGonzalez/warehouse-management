@@ -1,0 +1,16 @@
+:root { font-family: Inter, system-ui, sans-serif; color: #172033; background: #f4f7fb; }
+* { box-sizing: border-box; } body { margin: 0; } button, input, select { font: inherit; }
+button { border: 0; border-radius: 8px; padding: .7rem 1rem; background: #2563eb; color: white; cursor: pointer; font-weight: 600; }
+button.secondary { background: transparent; color: #dbeafe; border: 1px solid #64748b; }
+button.secondary.dark { color: #334155; border-color: #94a3b8; } button.danger { background: #dc2626; }
+button.link-button { background: none; color: #2563eb; padding: .25rem 0; }
+header { background: #172033; color: white; padding: 1rem max(1rem, calc((100% - 1100px) / 2)); display: flex; justify-content: space-between; align-items: center; }
+header strong { display: block; font-size: 1.1rem; } header span { color: #cbd5e1; font-size: .85rem; }
+main { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; } h1 { margin-top: 0; } h2 { margin-top: 0; font-size: 1.1rem; }
+.panel, .auth-card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 5px 20px #17203312; margin-bottom: 1.25rem; }
+.auth-card { max-width: 420px; margin: 12vh auto; } form { display: grid; gap: 1rem; } label { display: grid; gap: .35rem; font-weight: 600; font-size: .9rem; } input, select { border: 1px solid #cbd5e1; border-radius: 7px; padding: .65rem; background: white; }
+.grid-form { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; } .grid-form button { align-self: end; }
+.two-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; } .line { display: grid; grid-template-columns: 1fr 140px auto; gap: 1rem; align-items: end; }
+.table-wrap { overflow-x: auto; } table { width: 100%; border-collapse: collapse; } th, td { padding: .8rem .5rem; text-align: left; border-bottom: 1px solid #e2e8f0; } th { color: #64748b; font-size: .8rem; text-transform: uppercase; } small { color: #64748b; }
+.badge, .warehouse { display: inline-block; border-radius: 999px; padding: .25rem .55rem; background: #dcfce7; color: #166534; font-size: .8rem; margin: .15rem; } .badge.warning { background: #fef3c7; color: #92400e; }
+.notice { color: #166534; align-self: center; } .error { color: #b91c1c; background: #fee2e2; padding: .7rem; border-radius: 7px; }
