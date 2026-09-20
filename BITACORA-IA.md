@@ -102,43 +102,193 @@ No se permiten despachos parciales. En caso de cancelación, no se generan `Desp
 
 # Sesion 3 - 19/09/2026
 
-## Auditoria y correccion del nucleo Stock/Movement
+## 1. Primera petición
 
-Se revisaron `AGENTS.md`, `ASSUMPTIONS.md`, los ADR de arquitectura y concurrencia, y la
-implementacion existente de `Stock` y `Movement`.
+**Pedí:** revisar si `Stock` y `Movement` cumplían realmente el modelo definido en `AGENTS.md`, y no solo los casos felices (entradas, salidas y traslados con stock suficiente y sin condiciones de carrera).
 
-Se corrigio lo siguiente:
+**Propuso:** agregar validaciones tanto en la entidad Java como restricciones `CHECK` persistentes (para que la base de datos rechace estados inválidos incluso si algo se salta la capa de servicio), consultas de reconciliación que reconstruyan el saldo desde el historial de `Movement`, y pruebas adicionales para los casos de rechazo.
 
-- `Stock` y `Product` validan sus cantidades tambien desde el modelo Java y declaran
-  restricciones `CHECK` para impedir cantidades negativas.
-- `Movement` valida producto, cantidad y combinaciones de bodegas, y declara restricciones
-  persistentes para las reglas de `INBOUND`, `OUTBOUND` y `TRANSFER`.
-- La consulta por producto ahora incluye todas las bodegas, incluso cuando la existencia es
-  cero; las consultas con producto o bodega inexistentes responden con el error de recurso no
-  encontrado en lugar de inventar un saldo cero.
-- El resumen general carga stocks y bodegas en bloque para evitar el patron N+1.
-- Se agrego una consulta de reconstruccion desde `Movement` y un endpoint de reconciliacion para
-  comparar el saldo proyectado de `Stock` con el saldo historico.
-- La actualizacion atomica de incrementos ahora verifica que la operacion haya afectado filas.
-- Se agregaron pruebas para una entrada exitosa y se conservaron las pruebas de rechazos existentes.
+**Acepté:** mantener `Movement` como fuente de verdad y `Stock` como proyección (según el ADR correspondiente); que la consulta de existencias incluya bodegas con cantidad cero en vez de omitirlas; y que la API devuelva error cuando el producto o la bodega consultados no existen, en vez de responder con un saldo cero que podría confundirse con "existe pero está vacío".
 
-La base de datos actual utiliza MySQL, por lo que el incremento/creacion atomico sigue usando
-`INSERT ... ON DUPLICATE KEY UPDATE`. La asociacion obligatoria con `Admin` permanece como el
-siguiente incremento porque requiere implementar primero la sesion HTTP y no se debe inventar un
-administrador dentro de los movimientos.
+**Motivo:** un saldo cero inventado para un recurso que no existe oculta errores (por ejemplo, un `productId` mal escrito desde el frontend pasaría inadvertido). Incluir explícitamente las combinaciones producto-bodega en cero es necesario para que la consulta obligatoria pueda señalar productos por debajo del mínimo incluso cuando nunca han tenido movimiento en alguna bodega.
 
-## 6. Trazabilidad del administrador
+**Quedó sin verificar:** una reconstrucción completa del saldo contra una base MySQL real después de acumular muchos movimientos (la reconciliación se probó, pero no a volumen).
 
-Se aclaro en `AGENTS.md` que toda operacion que cambie o registre estado de negocio debe ser
-trazable al `Administrador` autenticado. Esto incluye entradas, salidas, traslados, pedidos,
-despachos y futuras operaciones de inventario.
+## 2. Segunda petición
 
-En la rama funcional siguiente se implemento el fundamento de esta regla:
+**Pedí:** aclarar cómo se agregan productos a una bodega sin abrir un CRUD directo sobre `Stock`, dado que `Existencia` es una proyección y no debe mutarse fuera del flujo de movimientos.
 
-- `Admin` almacena username, nombre y solo el hash de la contraseña.
-- `POST /api/auth/register` permite crear el administrador inicial y cierra el registro
-  despues de la primera cuenta.
-- `POST /api/auth/login` crea una sesion HTTP; `POST /api/auth/logout` la invalida.
-- Las operaciones de movimiento requieren una sesion autenticada.
-- `Movement` guarda `administrator_id` y las respuestas exponen el administrador responsable
-  sin exponer su contraseña.
+**Propuso:** usar `POST /api/movements/inbound` como único punto de entrada — la primera entrada para una combinación producto-bodega crea el registro de `Stock`, y las siguientes simplemente incrementan la cantidad existente.
+
+**Acepté:** no crear ningún endpoint de escritura directa sobre `Stock`. `OUTBOUND` queda reservado para salidas generales que no vienen de un pedido (mermas, ajustes manuales) desde una única bodega, mientras que los pedidos reutilizan el mismo mecanismo de descuento atómico que ya existía para `OUTBOUND`, en vez de duplicar la lógica.
+
+**Rechacé:** que el frontend pudiera actualizar directamente la cantidad de una existencia (por ejemplo, un formulario de "editar stock"), porque rompería la regla de que todo cambio de inventario debe generar su `Movimiento` correspondiente.
+
+**Quedó sin verificar:** si hará falta, más adelante, un flujo separado para ajustes por conteo físico que no encaje bien como `ENTRADA` ni como `SALIDA` ordinaria.
+
+## 3. Tercera petición
+
+**Pedí:** corregir los endpoints de consulta de stock que estaban devolviendo error `500`.
+
+**Propuso:** revisar cómo el repositorio navegaba las propiedades anidadas de la entidad `Stock` en las consultas derivadas de Spring Data.
+
+**Acepté:** cambiar la consulta a `findByProduct_IdAndWarehouse_Id`, ya que `productId` y `warehouseId` no son propiedades directas de `Stock` sino que hay que atravesar las relaciones `product` y `warehouse` para llegar a su `id`.
+
+**Quedó sin verificar:** si el resto de los endpoints equivalentes de consulta están cubiertos por pruebas HTTP de extremo a extremo, o si solo se probó el caso puntual que fallaba.
+
+---
+
+# Sesion 4 - 19/09/2026
+
+## 1. Primera petición
+
+**Pedí:** añadir trazabilidad del administrador a las operaciones del sistema, sin implementar autenticación avanzada.
+
+**Propuso:** crear la entidad `Admin` almacenando la contraseña con BCrypt, usar `HttpSession` para manejar la sesión, y proteger los endpoints de movimientos y pedidos exigiendo sesión activa.
+
+**Acepté:** un flujo de registro inicial (que se cierra después de la primera cuenta), login, logout, y la asociación obligatoria entre cada `Movement`/`Order` y el administrador autenticado que los registró — consistente con las relaciones `Administrador → Movimiento` y `Administrador → Pedido` definidas en el modelo.
+
+**Rechacé:** JWT, OAuth, manejo de roles y recuperación de contraseña, porque el alcance excluye explícitamente autenticación avanzada y solo hay un tipo de usuario.
+
+**Quedó sin verificar:** cómo cerrar o proteger operativamente el endpoint de registro inicial fuera de un ambiente local.
+
+## 2. Segunda petición
+
+**Pedí:** decidir si los endpoints de `Producto` y `Bodega` (catálogo) también debían requerir sesión iniciada.
+
+**Propuso:** proteger todas las escrituras del sistema por igual, para una política de seguridad uniforme.
+
+**Rechacé y por qué:** el alcance solo exige sesión para movimientos y pedidos, y como no existen roles, no hay forma de distinguir "quien administra el catálogo" de "quien opera el inventario" — proteger todo por igual habría sido una regla sin sustento en los requisitos.
+
+**Acepté:** mantener el catálogo sin autenticación y auditar únicamente las operaciones que cambian el estado del inventario o crean pedidos.
+
+**Quedó sin verificar:** si una versión posterior necesitará auditar también la edición del catálogo.
+
+---
+
+# Sesion 5 - 19/09/2026
+
+## 1. Primera petición
+
+**Pedí:** completar el módulo de pedidos una vez resueltos catálogo, movimientos, stock y autenticación.
+
+**Propuso:** implementar `Order`, `OrderLine` y `DispatchDetail` con evaluación síncrona al crear el pedido.
+
+**Acepté:** despachar desde una o varias bodegas cuando sea posible completar cada línea, y cancelar sin ningún efecto sobre el inventario cuando falte stock — sin estados intermedios.
+
+**Rechacé:** estados como `PENDIENTE` o despachos parciales, ya descartados desde la Sesión 2: el sistema resuelve el pedido de inmediato y en su totalidad, o lo cancela por completo.
+
+**Quedó sin verificar:** todavía no existe una política explícita de prioridad entre bodegas cuando una línea se reparte entre varias; por ahora se usa el orden en que la consulta devuelve las bodegas, lo cual habría que contrastar contra el ADR de despacho multi-bodega.
+
+## 2. Segunda petición
+
+**Pedí:** garantizar que un pedido nunca dejara cambios parciales aplicados al inventario, ni ante una falla de concurrencia a mitad de proceso.
+
+**Propuso:** validar todas las líneas antes de descontar cualquier existencia, y ejecutar descuentos, `DispatchDetail` y `Movement` dentro de una única transacción.
+
+**Acepté:** que una falla en la actualización condicional de stock durante la ejecución lance una excepción que revierta toda la transacción del pedido. Un pedido cancelado, por diseño, no genera `OUTBOUND`, ni `DispatchDetail`, ni modifica ningún `Stock`.
+
+**Quedó sin verificar:** una prueba real de concurrencia con dos transacciones simultáneas compitiendo por el mismo stock en una base MySQL real — hasta ahora la garantía es teórica, no probada bajo carga concurrente.
+
+## 3. Tercera petición
+
+**Pedí:** decidir cómo relacionar las salidas generadas por un pedido con el pedido que las originó.
+
+**Propuso:** crear una relación JPA directa (`@ManyToOne`) entre `Movement` y `Order`.
+
+**Rechacé por ahora:** agregar esa relación formal antes de que el modelo de pedidos esté más estable, dado que ya existe una forma de vincularlos sin tocar el esquema: el campo `referencia` de `Movement` (por ejemplo `ORDER:{id}`).
+
+**Acepté:** conservar por ahora la referencia textual, y evaluar más adelante una FK real si surgen necesidades de reportes o integridad referencial más estricta.
+
+**Quedó sin verificar:** si la referencia textual será suficiente el día que haga falta soportar devoluciones o auditorías más detalladas.
+
+---
+
+# Sesion 6 - 19/09/2026
+
+## 1. Primera petición
+
+**Pedí:** añadir una interfaz para operar el sistema completo, sin depender exclusivamente de Swagger.
+
+**Propuso:** un frontend en React/Vite que consumiera la API REST existente, sin duplicar ninguna regla de negocio.
+
+**Acepté:** que la interfaz cubra login/logout, creación básica de catálogo, un dashboard de existencias, formularios para entradas/salidas/traslados, y creación de pedidos — el flujo operativo esencial de principio a fin.
+
+**Rechacé:** duplicar las reglas de inventario en el frontend (por ejemplo, validar stock en JavaScript antes de enviar la solicitud) o implementar una autenticación paralela en React, ya que la sesión HTTP del backend resuelve eso.
+
+**Quedó sin verificar:** la edición completa del catálogo (por ahora solo hay creación) y una consulta visual detallada de pedidos ya procesados.
+
+## 2. Segunda petición
+
+**Pedí:** conectar el frontend en React con la sesión HTTP manejada por el backend, en vez de un esquema de tokens.
+
+**Propuso:** enviar `credentials: include` en cada solicitud desde React para incluir la cookie de sesión, y habilitar CORS en el backend únicamente para `http://localhost:5173`.
+
+**Acepté:** usar `VITE_API_URL` para cambiar la URL del backend sin tocar código, y mantener el CORS restringido al entorno de desarrollo local por ahora.
+
+**Quedó sin verificar:** cómo se configurará esto para un dominio definitivo, si se requerirá HTTPS y cookies seguras, y cuál será la política de CORS fuera del entorno local.
+
+## 3. Tercera petición
+
+**Pedí:** decidir si convenía reemplazar de inmediato `ddl-auto=update` por migraciones con Flyway.
+
+**Propuso:** introducir Flyway antes de seguir agregando funcionalidad nueva.
+
+**Rechacé por ahora:** hacerlo en este punto, porque el modelo de pedidos y el frontend todavía estaban cambiando activamente, y las migraciones de Flyway son más difíciles de corregir retroactivamente que un esquema autogenerado durante cambios frecuentes.
+
+**Acepté:** mantener `ddl-auto=update` únicamente como conveniencia de desarrollo local, y dejar explícito que Flyway con `ddl-auto=validate` es requisito obligatorio antes de cualquier despliegue.
+
+---
+
+# Sesion 7 - 20/09/2026
+
+## Primera petición
+
+**Pedí:** diseñar un plan por fases para mejorar el frontend básico y realizar un commit por cada fase.
+
+**Propuso:** separar el frontend en un shell de aplicación, cliente REST, autenticación, navegación, dashboard, existencias, catálogo, movimientos y pedidos, implementando cada bloque de forma incremental y validándolo con `npm run build`.
+
+**Acepté:** utilizar React Router para la navegación declarativa y la protección de rutas. No se incorporarán Redux, Zustand ni una librería visual adicional inicialmente; el estado permanecerá local a cada vista y la sesión se conservará mediante `credentials: include`.
+
+**Límites aceptados:** el frontend reutilizará los endpoints existentes y no simulará listados de movimientos o pedidos que el backend todavía no expone. Tampoco se crearán endpoints nuevos para facilitar la interfaz sin una decisión explícita.
+
+**Estructura acordada:** Dashboard, Inventory, Products, Warehouses, Orders y Authentication, con textos visibles en español y código fuente en inglés.
+
+**Flujo de trabajo acordado:** un commit por fase, con validación del build y comprobaciones de los flujos REST relevantes antes de avanzar.
+
+**Quedó sin verificar:** cómo se vería la migración inicial de Flyway aplicada sobre una base de datos que ya tiene datos.
+
+---
+
+# Sesion 8 - 20/09/2026
+
+## Trazabilidad, listados históricos y reconciliación en frontend
+
+Se identificó que el backend ya conserva la trazabilidad del administrador en
+movimientos y pedidos, pero el frontend solo cubría la creación de movimientos
+y pedidos y no ofrecía consultas históricas ni usaba la reconciliación de
+existencias.
+
+Se aceptó:
+
+- documentar en `AGENTS.md` las vistas de historial de movimientos y pedidos;
+- requerir sesión autenticada para las consultas de auditoría y listados;
+- agregar filtros y paginación ordenada de más reciente a más antiguo;
+- mostrar el administrador responsable como dato de auditoría no editable;
+- mantener el detalle completo de pedidos separado del DTO resumido del listado;
+- exponer en el frontend la reconciliación entre existencia proyectada e
+  historial de movimientos sin duplicar el cálculo en React.
+
+Los filtros acordados para movimientos son tipo, producto, bodega de origen o
+destino, administrador, rango de fechas y referencia. Para pedidos son estado,
+administrador y rango de fechas.
+
+## 4. Cuarta petición
+
+**Pedí:** comprobar que el incremento de esta sesión pudiera integrarse de forma segura al resto del proyecto.
+
+**Propuso:** ejecutar las pruebas de Maven, compilar el frontend, revisar el estado de Git y publicar la rama para abrir un PR hacia `main`.
+
+**Acepté:** dar por verificado el incremento únicamente cuando `backend\mvnw.cmd -q test` y `frontend\npm run build` terminaran sin errores y el árbol de trabajo quedara limpio.
+
+**Quedó sin verificar:** una prueba end-to-end real, con el backend levantado y datos reales en MySQL, en vez de solo pruebas unitarias/de integración.

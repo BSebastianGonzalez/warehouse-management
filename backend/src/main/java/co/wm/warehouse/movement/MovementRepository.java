@@ -1,10 +1,11 @@
 package co.wm.warehouse.movement;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface MovementRepository extends JpaRepository<Movement, Long> {
+public interface MovementRepository extends JpaRepository<Movement, Long>, JpaSpecificationExecutor<Movement> {
 
     @Query("""
             select coalesce(sum(
