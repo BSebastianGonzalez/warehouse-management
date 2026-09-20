@@ -3,6 +3,7 @@ package co.wm.warehouse.movement;
 import co.wm.warehouse.product.Product;
 import co.wm.warehouse.product.ProductNotFoundException;
 import co.wm.warehouse.product.ProductRepository;
+import co.wm.warehouse.admin.Admin;
 import co.wm.warehouse.stock.Stock;
 import co.wm.warehouse.stock.StockRepository;
 import co.wm.warehouse.warehouse.Warehouse;
@@ -32,28 +33,28 @@ public class MovementService {
     }
 
     @Transactional
-    public MovementResponse inbound(MovementRequest request) {
+    public MovementResponse inbound(MovementRequest request, Admin administrator) {
         Product product = findProduct(request.productId());
         ensureNotDiscontinued(product);
         Warehouse warehouse = findWarehouse(request.warehouseId());
         incrementStock(product, warehouse, request.quantity());
         Movement movement = movementRepository.save(new Movement(
-                MovementType.INBOUND, product, null, warehouse, request.quantity(), request.reference()));
+                MovementType.INBOUND, product, administrator, null, warehouse, request.quantity(), request.reference()));
         return MovementResponse.from(movement);
     }
 
     @Transactional
-    public MovementResponse outbound(MovementRequest request) {
+    public MovementResponse outbound(MovementRequest request, Admin administrator) {
         Product product = findProduct(request.productId());
         Warehouse warehouse = findWarehouse(request.warehouseId());
         decrementStock(product, warehouse, request.quantity());
         Movement movement = movementRepository.save(new Movement(
-                MovementType.OUTBOUND, product, warehouse, null, request.quantity(), request.reference()));
+                MovementType.OUTBOUND, product, administrator, warehouse, null, request.quantity(), request.reference()));
         return MovementResponse.from(movement);
     }
 
     @Transactional
-    public MovementResponse transfer(TransferRequest request) {
+    public MovementResponse transfer(TransferRequest request, Admin administrator) {
         if (Objects.equals(request.sourceWarehouseId(), request.destinationWarehouseId())) {
             throw new InvalidMovementException("Source and destination warehouses must be different");
         }
@@ -64,7 +65,7 @@ public class MovementService {
         decrementStock(product, source, request.quantity());
         incrementStock(product, destination, request.quantity());
         Movement movement = movementRepository.save(new Movement(
-                MovementType.TRANSFER, product, source, destination, request.quantity(), request.reference()));
+                MovementType.TRANSFER, product, administrator, source, destination, request.quantity(), request.reference()));
         return MovementResponse.from(movement);
     }
 

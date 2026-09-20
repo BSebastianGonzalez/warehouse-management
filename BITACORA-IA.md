@@ -126,3 +126,19 @@ La base de datos actual utiliza MySQL, por lo que el incremento/creacion atomico
 `INSERT ... ON DUPLICATE KEY UPDATE`. La asociacion obligatoria con `Admin` permanece como el
 siguiente incremento porque requiere implementar primero la sesion HTTP y no se debe inventar un
 administrador dentro de los movimientos.
+
+## 6. Trazabilidad del administrador
+
+Se aclaro en `AGENTS.md` que toda operacion que cambie o registre estado de negocio debe ser
+trazable al `Administrador` autenticado. Esto incluye entradas, salidas, traslados, pedidos,
+despachos y futuras operaciones de inventario.
+
+En la rama funcional siguiente se implemento el fundamento de esta regla:
+
+- `Admin` almacena username, nombre y solo el hash de la contraseña.
+- `POST /api/auth/register` permite crear el administrador inicial y cierra el registro
+  despues de la primera cuenta.
+- `POST /api/auth/login` crea una sesion HTTP; `POST /api/auth/logout` la invalida.
+- Las operaciones de movimiento requieren una sesion autenticada.
+- `Movement` guarda `administrator_id` y las respuestas exponen el administrador responsable
+  sin exponer su contraseña.

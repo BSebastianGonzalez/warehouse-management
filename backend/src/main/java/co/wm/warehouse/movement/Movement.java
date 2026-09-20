@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 import co.wm.warehouse.product.Product;
+import co.wm.warehouse.admin.Admin;
 import co.wm.warehouse.warehouse.Warehouse;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -41,6 +42,10 @@ public class Movement {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "administrator_id", nullable = false)
+    private Admin administrator;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_warehouse_id")
     private Warehouse sourceWarehouse;
@@ -62,13 +67,15 @@ public class Movement {
     public Movement(
             MovementType type,
             Product product,
+            Admin administrator,
             Warehouse sourceWarehouse,
             Warehouse destinationWarehouse,
             Integer quantity,
             String reference) {
-        validate(type, product, sourceWarehouse, destinationWarehouse, quantity);
+        validate(type, product, administrator, sourceWarehouse, destinationWarehouse, quantity);
         this.type = type;
         this.product = product;
+        this.administrator = administrator;
         this.sourceWarehouse = sourceWarehouse;
         this.destinationWarehouse = destinationWarehouse;
         this.quantity = quantity;
@@ -79,11 +86,12 @@ public class Movement {
     private void validate(
             MovementType type,
             Product product,
+            Admin administrator,
             Warehouse sourceWarehouse,
             Warehouse destinationWarehouse,
             Integer quantity) {
-        if (type == null || product == null || quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Movement type, product and positive quantity are required");
+        if (type == null || product == null || administrator == null || quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Movement type, product, administrator and positive quantity are required");
         }
         if (type == MovementType.INBOUND && (sourceWarehouse != null || destinationWarehouse == null)
                 || type == MovementType.OUTBOUND && (sourceWarehouse == null || destinationWarehouse != null)
@@ -99,6 +107,8 @@ public class Movement {
     public Integer getQuantity() { return quantity; }
     public Instant getCreatedAt() { return createdAt; }
     public String getReference() { return reference; }
+    public Long getAdministratorId() { return administrator.getId(); }
+    public String getAdministratorUsername() { return administrator.getUsername(); }
     public Long getProductId() { return product.getId(); }
     public Long getSourceWarehouseId() { return sourceWarehouse == null ? null : sourceWarehouse.getId(); }
     public Long getDestinationWarehouseId() {
