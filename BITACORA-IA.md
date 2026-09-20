@@ -160,3 +160,15 @@ Se inicio el modulo de pedidos en la rama `feature/synchronous-orders`:
 
 La implementacion mantiene la transaccion unica y reutiliza el descuento condicional de
 existencias para que una carrera de concurrencia revierta el pedido completo.
+
+## 8. Interfaz React inicial
+
+Se agrego `frontend/` como aplicacion React/Vite para operar el backend existente:
+
+- inicio de sesion y cierre de sesion usando la cookie de `HttpSession`;
+- dashboard de existencias por producto y bodega, con alerta de minimo;
+- formulario para registrar entradas, salidas y traslados;
+- manejo visible de errores y respuestas de la API;
+- configuracion de CORS restringida al origen local `http://localhost:5173`.
+
+La interfaz usa `VITE_API_URL` para cambiar la URL del backend sin modificar el codigo.

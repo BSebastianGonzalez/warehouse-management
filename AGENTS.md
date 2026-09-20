@@ -126,6 +126,12 @@ Project documentation may remain in Spanish unless otherwise specified. The code
 - Cada `ENTRADA`, `SALIDA`, `TRASLADO`, pedido y despacho debe quedar trazablemente asociado al `Administrador` que lo realizó.
 - No se deben crear movimientos ni pedidos anónimos; las futuras operaciones de inventario o pedidos que modifiquen el estado también deben conservar esta asociación.
 
+### Frontend
+- La interfaz React vive en `frontend/` y usa Vite.
+- Las peticiones autenticadas deben enviar credenciales (`credentials: include`) para conservar la sesión HTTP.
+- En desarrollo, el frontend se ejecuta en `http://localhost:5173` y el backend en `http://localhost:8080`.
+- La URL base del backend se configura con `VITE_API_URL`; por defecto es `http://localhost:8080/api`.
+
 ## Invariantes del inventario
 
 - `Existencia.cantidad` nunca puede ser negativa.
