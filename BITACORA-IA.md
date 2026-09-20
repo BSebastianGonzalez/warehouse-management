@@ -280,8 +280,15 @@ Se aceptó:
   historial de movimientos sin duplicar el cálculo en React.
 
 Los filtros acordados para movimientos son tipo, producto, bodega de origen o
-destino, administrador, rango de fechas y referencia. Para pedidos son estado,
-administrador y rango de fechas.
+destino, administrador opcional y rango de fechas. La referencia se conserva
+en los movimientos registrados para trazabilidad, pero no se utiliza como
+filtro ni se muestra en el historial. Para pedidos son estado, administrador
+opcional y rango de fechas; sin administrador seleccionado se consultan todos.
+
+Se corrigió la causa del error `Specification must not be null`: las consultas
+históricas deben iniciar con una especificación no nula cuando no hay filtros.
+No se elimina `Specification` del backend porque sigue siendo útil para
+combinar filtros opcionales.
 
 ## 4. Cuarta petición
 

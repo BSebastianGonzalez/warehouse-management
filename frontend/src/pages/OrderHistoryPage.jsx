@@ -19,6 +19,7 @@ function OrderResult({ order, products }) {
 
 export function OrderHistoryPage() {
   const [products, setProducts] = useState([]);
+  const [administrators, setAdministrators] = useState([]);
   const [filters, setFilters] = useState({ status: "", administratorId: "", from: "", to: "" });
   const [result, setResult] = useState({ content: [], number: 0, totalPages: 1 });
   const [selected, setSelected] = useState(null);
@@ -31,7 +32,14 @@ export function OrderHistoryPage() {
     catch (error) { setState({ loading: false, error: error.message }); }
   };
   useEffect(() => {
-    api.products.list().then(setProducts).then(() => load()).catch((error) => setState({ loading: false, error: error.message }));
+    Promise.all([
+      api.products.list(),
+      api.auth.administrators().catch(() => [])
+    ]).then(([productList, administratorList]) => {
+      setProducts(productList);
+      setAdministrators(administratorList);
+      return load();
+    }).catch((error) => setState({ loading: false, error: error.message }));
   }, []);
   const showDetail = async (id) => {
     setDetailState({ loading: true, error: "" });
@@ -43,7 +51,7 @@ export function OrderHistoryPage() {
     <div className="section-heading"><div><p className="eyebrow">Consulta</p><h2>Historial de pedidos</h2><p className="muted">Consulta pedidos ordenados del más reciente al más antiguo.</p></div></div>
     <form className="panel filters-panel" onSubmit={(event) => { event.preventDefault(); load(0, { ...filters, from: asInstant(filters.from), to: asInstant(filters.to) }); }}>
       <FormField label="Estado"><select value={filters.status} onChange={(event) => update("status", event.target.value)}><option value="">Todos</option><option value="DISPATCHED">Despachado</option><option value="CANCELLED">Cancelado</option></select></FormField>
-      <FormField label="Administrador"><input value={filters.administratorId} onChange={(event) => update("administratorId", event.target.value)} inputMode="numeric" /></FormField>
+      <FormField label="Administrador"><select value={filters.administratorId} onChange={(event) => update("administratorId", event.target.value)}><option value="">Todos</option>{administrators.map((administrator) => <option key={administrator.id} value={administrator.id}>{administrator.name || administrator.username}</option>)}</select></FormField>
       <FormField label="Desde"><input type="datetime-local" value={filters.from} onChange={(event) => update("from", event.target.value)} /></FormField>
       <FormField label="Hasta"><input type="datetime-local" value={filters.to} onChange={(event) => update("to", event.target.value)} /></FormField>
       <button className="button button-primary">Filtrar</button>
