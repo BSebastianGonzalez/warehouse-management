@@ -5,6 +5,8 @@ import { api } from "./api/client";
 import { AppLayout } from "./components/AppLayout";
 import { FormField } from "./components/FormField";
 import { Notice } from "./components/Feedback";
+import { DashboardPage } from "./pages/DashboardPage";
+import { StockPage } from "./pages/StockPage";
 import "./styles.css";
 
 const AuthContext = createContext(null);
@@ -105,8 +107,8 @@ function AppRoutes() {
   return <Routes>
     <Route path="/login" element={<GuestRoute />} />
     <Route element={<ProtectedRoute />}>
-      <Route index element={<PlaceholderPage title="Resumen de inventario" description="Una vista rápida del estado de tus productos y bodegas." />} />
-      <Route path="inventory" element={<PlaceholderPage title="Existencias" description="Consulta el stock por producto y bodega." />} />
+      <Route index element={<DashboardPage />} />
+      <Route path="inventory" element={<StockPage />} />
       <Route path="products" element={<PlaceholderPage title="Productos" description="Administra el catálogo de productos." />} />
       <Route path="warehouses" element={<PlaceholderPage title="Bodegas" description="Administra las bodegas de la operación." />} />
       <Route path="movements" element={<PlaceholderPage title="Movimientos" description="Registra entradas, salidas y traslados." />} />
