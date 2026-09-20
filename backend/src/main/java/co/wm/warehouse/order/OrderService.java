@@ -99,7 +99,7 @@ public class OrderService {
             Instant from,
             Instant to,
             Pageable pageable) {
-        Specification<Order> specification = Specification.where((Specification<Order>) null);
+        Specification<Order> specification = Specification.unrestricted();
         if (status != null) {
             specification = specification.and((root, query, builder) -> builder.equal(root.get("status"), status));
         }

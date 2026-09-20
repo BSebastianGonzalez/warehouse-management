@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import co.wm.warehouse.product.Product;
 import co.wm.warehouse.product.ProductRepository;
@@ -93,5 +95,27 @@ class MovementServiceTest {
         assertThat(response.type()).isEqualTo(MovementType.INBOUND);
         assertThat(response.quantity()).isEqualTo(4);
         verify(movementRepository).save(any(Movement.class));
+    }
+
+    @Test
+    void listsHistoryWithoutFiltersUsingAnUnrestrictedSpecification() {
+        Pageable pageable = Pageable.ofSize(20);
+        when(movementRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(java.util.List.of()));
+
+        movementService.findAll(null, null, null, null, null, null, pageable);
+
+        verify(movementRepository).findAll(any(org.springframework.data.jpa.domain.Specification.class), org.mockito.Mockito.eq(pageable));
+    }
+
+    @Test
+    void supportsFilteringHistoryByAdministrator() {
+        Pageable pageable = Pageable.ofSize(20);
+        when(movementRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(java.util.List.of()));
+
+        movementService.findAll(null, null, null, 7L, null, null, pageable);
+
+        verify(movementRepository).findAll(any(org.springframework.data.jpa.domain.Specification.class), org.mockito.Mockito.eq(pageable));
     }
 }

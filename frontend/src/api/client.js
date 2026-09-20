@@ -54,6 +54,7 @@ export const api = {
   auth: {
     login: (data) => request("/auth/login", { method: "POST", body: JSON.stringify(data) }),
     register: (data) => request("/auth/register", { method: "POST", body: JSON.stringify(data) }),
+    administrators: () => request("/auth/administrators"),
     logout: () => request("/auth/logout", { method: "POST" })
   },
   products: {

@@ -1,6 +1,7 @@
 package co.wm.warehouse.admin;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.List;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,13 @@ public class AdminService {
 
     public void logout(HttpSession session) {
         session.invalidate();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AdminResponse> findAll() {
+        return adminRepository.findAll().stream()
+                .map(AdminResponse::from)
+                .toList();
     }
 
     @Transactional(readOnly = true)

@@ -10,7 +10,6 @@ public record MovementReadResponse(
         Long destinationWarehouseId,
         Integer quantity,
         Instant createdAt,
-        String reference,
         Long administratorId,
         String administratorUsername) {
 
@@ -23,7 +22,6 @@ public record MovementReadResponse(
                 movement.getDestinationWarehouseId(),
                 movement.getQuantity(),
                 movement.getCreatedAt(),
-                movement.getReference(),
                 movement.getAdministratorId(),
                 movement.getAdministratorUsername());
     }

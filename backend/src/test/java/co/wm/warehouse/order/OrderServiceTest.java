@@ -7,6 +7,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import co.wm.warehouse.admin.Admin;
 import co.wm.warehouse.movement.Movement;
@@ -83,6 +85,18 @@ class OrderServiceTest {
         assertThat(response.lines().get(0).missingQuantity()).isZero();
         assertThat(response.lines().get(0).dispatchDetails()).hasSize(2);
         verify(movementRepository, org.mockito.Mockito.times(2)).save(any(Movement.class));
+    }
+
+    @Test
+    void listsOrdersWithoutFiltersUsingAnUnrestrictedSpecification() {
+        Pageable pageable = Pageable.ofSize(20);
+        when(orderRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        orderService.findAll(null, null, null, null, pageable);
+
+        verify(orderRepository).findAll(any(org.springframework.data.jpa.domain.Specification.class),
+                org.mockito.Mockito.eq(pageable));
     }
 
     private Product product(Long id) {
