@@ -68,6 +68,10 @@ public class Product {
         return discontinued;
     }
 
+    public void changeDiscontinued(boolean discontinued) {
+        this.discontinued = discontinued;
+    }
+
     public void update(String sku, String name, String unitOfMeasure, Integer minimumStock, boolean discontinued) {
         validateMinimumStock(minimumStock);
         this.sku = sku;

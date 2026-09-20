@@ -54,4 +54,17 @@ class ProductServiceTest {
         assertThatThrownBy(() -> productService.findById(99L))
                 .isInstanceOf(ProductNotFoundException.class);
     }
+
+    @Test
+    void changesDiscontinuedStatusWithoutUpdatingOtherProductFields() {
+        Product product = new Product("SKU-1", "Paper", "unit", 10, false);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        ProductResponse response = productService.changeDiscontinued(
+                1L, new DiscontinuedRequest(true));
+
+        assertThat(response.discontinued()).isTrue();
+        assertThat(response.sku()).isEqualTo("SKU-1");
+        assertThat(response.name()).isEqualTo("Paper");
+    }
 }
