@@ -89,6 +89,10 @@ button:disabled { cursor: wait; opacity: .65; }
 .table-wrap { overflow-x: auto; } table { width: 100%; border-collapse: collapse; } th, td { padding: .95rem .55rem; text-align: left; border-bottom: 1px solid #edf0f5; white-space: nowrap; } th { color: #8290a7; font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; } td { font-size: .85rem; } td > strong, .table-subtitle { display: block; } .table-subtitle { color: #8290a7; font-size: .72rem; margin-top: .1rem; }
 .badge { display: inline-block; border-radius: 999px; padding: .3rem .55rem; font-size: .72rem; font-weight: 800; } .badge-success { color: #14633b; background: #e2f6e9; } .badge-warning { color: #a46108; background: #fff1d8; }
 .stock-chips { display: flex; flex-wrap: wrap; gap: .35rem; } .stock-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .28rem .45rem; border: 1px solid #e3e8f0; border-radius: 6px; color: #71809a; font-size: .7rem; } .stock-chip strong { color: #172033; }
+.catalog-grid { display: grid; grid-template-columns: minmax(250px, .7fr) minmax(0, 1.6fr); gap: 1.25rem; align-items: start; }
+.catalog-form { padding: 1.25rem; } .catalog-form h3 { margin: 0 0 1.2rem; font-size: 1rem; }
+.catalog-form form { display: grid; gap: 1rem; } .form-actions, .row-actions { display: flex; flex-wrap: wrap; gap: .45rem; } .button-small { padding: .45rem .6rem; font-size: .74rem; }
+.warehouse-cards { display: grid; gap: .6rem; padding-top: .8rem; } .warehouse-card { display: flex; align-items: center; gap: .7rem; padding: .8rem .2rem; border-bottom: 1px solid #edf0f5; } .warehouse-card > div { display: grid; flex: 1; } .warehouse-card small { color: #8290a7; } .warehouse-card-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; color: #3158d8; background: #eaf0ff; }
 @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 800px) {
   .sidebar { width: 72px; flex-basis: 72px; padding-inline: .65rem; }
@@ -100,6 +104,7 @@ button:disabled { cursor: wait; opacity: .65; }
   .topbar, .page-content { padding-inline: 1.25rem; }
   .account > div:not(.avatar), .account .button { display: none; }
   .metrics-grid, .dashboard-grid { grid-template-columns: 1fr; }
+  .catalog-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) {
   .topbar { align-items: flex-start; }

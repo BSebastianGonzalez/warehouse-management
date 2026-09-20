@@ -7,6 +7,7 @@ import { FormField } from "./components/FormField";
 import { Notice } from "./components/Feedback";
 import { DashboardPage } from "./pages/DashboardPage";
 import { StockPage } from "./pages/StockPage";
+import { ProductsPage, WarehousesPage } from "./pages/CatalogPages";
 import "./styles.css";
 
 const AuthContext = createContext(null);
@@ -109,8 +110,8 @@ function AppRoutes() {
     <Route element={<ProtectedRoute />}>
       <Route index element={<DashboardPage />} />
       <Route path="inventory" element={<StockPage />} />
-      <Route path="products" element={<PlaceholderPage title="Productos" description="Administra el catálogo de productos." />} />
-      <Route path="warehouses" element={<PlaceholderPage title="Bodegas" description="Administra las bodegas de la operación." />} />
+      <Route path="products" element={<ProductsPage />} />
+      <Route path="warehouses" element={<WarehousesPage />} />
       <Route path="movements" element={<PlaceholderPage title="Movimientos" description="Registra entradas, salidas y traslados." />} />
       <Route path="orders" element={<PlaceholderPage title="Pedidos" description="Crea pedidos y revisa su resultado." />} />
     </Route>
