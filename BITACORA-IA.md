@@ -172,3 +172,7 @@ Se agrego `frontend/` como aplicacion React/Vite para operar el backend existent
 - configuracion de CORS restringida al origen local `http://localhost:5173`.
 
 La interfaz usa `VITE_API_URL` para cambiar la URL del backend sin modificar el codigo.
+
+La compilacion de frontend y la suite Maven del backend fueron ejecutadas correctamente. Se mantiene
+`ddl-auto=update` solo como decision de desarrollo local; Flyway queda como paso obligatorio antes
+de compartir o desplegar el esquema.

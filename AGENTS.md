@@ -132,6 +132,10 @@ Project documentation may remain in Spanish unless otherwise specified. The code
 - En desarrollo, el frontend se ejecuta en `http://localhost:5173` y el backend en `http://localhost:8080`.
 - La URL base del backend se configura con `VITE_API_URL`; por defecto es `http://localhost:8080/api`.
 
+### Persistencia durante el alcance inicial
+- El entorno de desarrollo mantiene `spring.jpa.hibernate.ddl-auto=update` para evitar bloquear el trabajo funcional con migraciones antes de estabilizar el modelo.
+- Antes de un despliegue o de una evolución compartida del esquema se debe introducir Flyway con una migración inicial y cambiar `ddl-auto` a `validate`.
+
 ## Invariantes del inventario
 
 - `Existencia.cantidad` nunca puede ser negativa.
