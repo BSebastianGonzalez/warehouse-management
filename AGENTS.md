@@ -469,6 +469,27 @@ No se debe permitir desde la interfaz una operación que contradiga evidentement
 
 Sin embargo, estas comprobaciones de interfaz no sustituyen las validaciones del backend.
 
+#### Historial y trazabilidad de movimientos
+
+Además de registrar nuevos movimientos, el frontend debe permitir consultar el
+historial de movimientos ya realizados. Esta consulta representa una
+auditoría de inventario y no debe confundirse con el formulario de creación.
+
+La vista debe consumir `GET /api/movements` y:
+
+* Requerir una sesión autenticada.
+* Mostrar tipo, fecha, producto, cantidad, bodega de origen, bodega de
+  destino, referencia y administrador responsable.
+* Permitir filtrar por tipo, producto, bodega (como origen o destino),
+  administrador, rango de fechas y referencia.
+* Mostrar los resultados ordenados del más reciente al más antiguo.
+* Soportar paginación y estados de carga, vacío y error.
+
+La identidad del administrador debe mostrarse como información de auditoría,
+no como un campo editable. El frontend no debe reconstruir saldos ni inferir
+movimientos a partir de la existencia actual; el backend es la fuente de
+verdad del historial.
+
 ### Pedidos
 
 Debe existir una interfaz para registrar pedidos con una o varias líneas.
@@ -491,6 +512,37 @@ Para un pedido despachado, debe poder visualizarse desde qué bodegas se atendi�
 Para un pedido cancelado, debe mostrarse claramente la cantidad faltante por línea.
 
 No debe existir en el frontend un estado de pedido que no exista en el modelo del backend.
+
+#### Consulta histórica de pedidos
+
+La interfaz también debe permitir consultar pedidos previamente registrados,
+además de crear uno nuevo. La vista debe consumir `GET /api/orders`, requerir
+sesión autenticada y:
+
+* Mostrar identificador, fecha, estado, administrador responsable, cantidad de
+  líneas, cantidad solicitada total y cantidad faltante total.
+* Permitir filtrar por estado, administrador y rango de fechas.
+* Mostrar los resultados del más reciente al más antiguo con paginación.
+* Permitir abrir el detalle mediante `GET /api/orders/{id}`.
+* Mostrar en el detalle las líneas, faltantes y bodegas desde las que se
+  despachó cada línea.
+* Contemplar estados de carga, vacío, error y error de autorización.
+
+El listado debe usar un DTO resumido; no debe cargar ni presentar todas las
+líneas y despachos de cada pedido hasta que el usuario abra su detalle.
+
+### Reconciliación de existencias
+
+La consulta de existencias debe ofrecer una acción de reconciliación por
+producto y bodega usando
+`GET /api/stocks/products/{productId}/warehouses/{warehouseId}/reconciliation`.
+Debe mostrar la cantidad proyectada, la cantidad reconstruida desde los
+movimientos y si ambas son consistentes.
+
+La reconciliación es una consulta de control y no una operación de edición. El
+frontend debe mostrar el resultado entregado por el backend y no recalcular la
+consistencia en React. También debe contemplar estados de carga, resultado
+inconsistente, resultado consistente, vacío y error.
 
 ### Autenticación
 

@@ -258,6 +258,31 @@ No se permiten despachos parciales. En caso de cancelación, no se generan `Desp
 
 **Quedó sin verificar:** cómo se vería la migración inicial de Flyway aplicada sobre una base de datos que ya tiene datos.
 
+---
+
+# Sesion 8 - 20/09/2026
+
+## Trazabilidad, listados históricos y reconciliación en frontend
+
+Se identificó que el backend ya conserva la trazabilidad del administrador en
+movimientos y pedidos, pero el frontend solo cubría la creación de movimientos
+y pedidos y no ofrecía consultas históricas ni usaba la reconciliación de
+existencias.
+
+Se aceptó:
+
+- documentar en `AGENTS.md` las vistas de historial de movimientos y pedidos;
+- requerir sesión autenticada para las consultas de auditoría y listados;
+- agregar filtros y paginación ordenada de más reciente a más antiguo;
+- mostrar el administrador responsable como dato de auditoría no editable;
+- mantener el detalle completo de pedidos separado del DTO resumido del listado;
+- exponer en el frontend la reconciliación entre existencia proyectada e
+  historial de movimientos sin duplicar el cálculo en React.
+
+Los filtros acordados para movimientos son tipo, producto, bodega de origen o
+destino, administrador, rango de fechas y referencia. Para pedidos son estado,
+administrador y rango de fechas.
+
 ## 4. Cuarta petición
 
 **Pedí:** comprobar que el incremento de esta sesión pudiera integrarse de forma segura al resto del proyecto.

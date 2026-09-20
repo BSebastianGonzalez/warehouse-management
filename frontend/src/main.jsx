@@ -10,6 +10,9 @@ import { StockPage } from "./pages/StockPage";
 import { ProductsPage, WarehousesPage } from "./pages/CatalogPages";
 import { MovementsPage } from "./pages/MovementsPage";
 import { OrdersPage } from "./pages/OrdersPage";
+import { MovementHistoryPage } from "./pages/MovementHistoryPage";
+import { OrderHistoryPage } from "./pages/OrderHistoryPage";
+import { ReconciliationPage } from "./pages/ReconciliationPage";
 import "./styles.css";
 
 const AuthContext = createContext(null);
@@ -115,7 +118,10 @@ function AppRoutes() {
       <Route path="products" element={<ProductsPage />} />
       <Route path="warehouses" element={<WarehousesPage />} />
       <Route path="movements" element={<MovementsPage />} />
+      <Route path="movement-history" element={<MovementHistoryPage />} />
       <Route path="orders" element={<OrdersPage />} />
+      <Route path="order-history" element={<OrderHistoryPage />} />
+      <Route path="reconciliation" element={<ReconciliationPage />} />
     </Route>
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>;
