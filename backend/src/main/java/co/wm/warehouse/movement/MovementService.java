@@ -31,29 +31,28 @@ public class MovementService {
     }
 
     @Transactional
-    public void inbound(MovementRequest request) {
+    public MovementResponse inbound(MovementRequest request) {
         Product product = findProduct(request.productId());
         ensureNotDiscontinued(product);
         Warehouse warehouse = findWarehouse(request.warehouseId());
-        Stock stock = stockRepository.findByProductIdAndWarehouseId(product.getId(), warehouse.getId())
-                .orElseGet(() -> new Stock(product, warehouse, 0));
-        stock.increase(request.quantity());
-        stockRepository.save(stock);
-        movementRepository.save(new Movement(
+        incrementStock(product, warehouse, request.quantity());
+        Movement movement = movementRepository.save(new Movement(
                 MovementType.INBOUND, product, null, warehouse, request.quantity(), request.reference()));
+        return MovementResponse.from(movement);
     }
 
     @Transactional
-    public void outbound(MovementRequest request) {
+    public MovementResponse outbound(MovementRequest request) {
         Product product = findProduct(request.productId());
         Warehouse warehouse = findWarehouse(request.warehouseId());
         decrementStock(product, warehouse, request.quantity());
-        movementRepository.save(new Movement(
+        Movement movement = movementRepository.save(new Movement(
                 MovementType.OUTBOUND, product, warehouse, null, request.quantity(), request.reference()));
+        return MovementResponse.from(movement);
     }
 
     @Transactional
-    public void transfer(TransferRequest request) {
+    public MovementResponse transfer(TransferRequest request) {
         if (request.sourceWarehouseId().equals(request.destinationWarehouseId())) {
             throw new InvalidMovementException("Source and destination warehouses must be different");
         }
@@ -62,12 +61,10 @@ public class MovementService {
         Warehouse source = findWarehouse(request.sourceWarehouseId());
         Warehouse destination = findWarehouse(request.destinationWarehouseId());
         decrementStock(product, source, request.quantity());
-        Stock destinationStock = stockRepository.findByProductIdAndWarehouseId(product.getId(), destination.getId())
-                .orElseGet(() -> new Stock(product, destination, 0));
-        destinationStock.increase(request.quantity());
-        stockRepository.save(destinationStock);
-        movementRepository.save(new Movement(
+        incrementStock(product, destination, request.quantity());
+        Movement movement = movementRepository.save(new Movement(
                 MovementType.TRANSFER, product, source, destination, request.quantity(), request.reference()));
+        return MovementResponse.from(movement);
     }
 
     private void decrementStock(Product product, Warehouse warehouse, Integer quantity) {
@@ -75,6 +72,10 @@ public class MovementService {
         if (updatedRows == 0) {
             throw new InsufficientStockException(product.getId(), warehouse.getId());
         }
+    }
+
+    private void incrementStock(Product product, Warehouse warehouse, Integer quantity) {
+        stockRepository.incrementOrCreate(product.getId(), warehouse.getId(), quantity);
     }
 
     private Product findProduct(Long id) {

@@ -36,6 +36,9 @@ public class Stock {
     }
 
     public Stock(Product product, Warehouse warehouse, Integer quantity) {
+        if (quantity == null || quantity < 0) {
+            throw new IllegalArgumentException("Stock quantity cannot be negative");
+        }
         this.product = product;
         this.warehouse = warehouse;
         this.quantity = quantity;
@@ -46,6 +49,17 @@ public class Stock {
     }
 
     public void increase(Integer amount) {
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("Stock increase must be positive");
+        }
         quantity += amount;
+    }
+
+    public Long getProductId() {
+        return product.getId();
+    }
+
+    public Long getWarehouseId() {
+        return warehouse.getId();
     }
 }

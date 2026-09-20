@@ -20,19 +20,19 @@ public class MovementController {
 
     @PostMapping("/inbound")
     @ResponseStatus(HttpStatus.CREATED)
-    public void inbound(@Valid @RequestBody MovementRequest request) {
-        movementService.inbound(request);
+    public MovementResponse inbound(@Valid @RequestBody MovementRequest request) {
+        return movementService.inbound(request);
     }
 
     @PostMapping("/outbound")
     @ResponseStatus(HttpStatus.CREATED)
-    public void outbound(@Valid @RequestBody MovementRequest request) {
-        movementService.outbound(request);
+    public MovementResponse outbound(@Valid @RequestBody MovementRequest request) {
+        return movementService.outbound(request);
     }
 
     @PostMapping("/transfers")
     @ResponseStatus(HttpStatus.CREATED)
-    public void transfer(@Valid @RequestBody TransferRequest request) {
-        movementService.transfer(request);
+    public MovementResponse transfer(@Valid @RequestBody TransferRequest request) {
+        return movementService.transfer(request);
     }
 }

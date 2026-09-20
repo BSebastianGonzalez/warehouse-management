@@ -11,6 +11,19 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
 
     Optional<Stock> findByProductIdAndWarehouseId(Long productId, Long warehouseId);
 
+    java.util.List<Stock> findAllByProductId(Long productId);
+
+    @Modifying
+    @Query(value = """
+            insert into stocks (product_id, warehouse_id, quantity)
+            values (:productId, :warehouseId, :quantity)
+            on duplicate key update quantity = quantity + values(quantity)
+            """, nativeQuery = true)
+    int incrementOrCreate(
+            @Param("productId") Long productId,
+            @Param("warehouseId") Long warehouseId,
+            @Param("quantity") Integer quantity);
+
     @Modifying
     @Query("""
             update Stock stock
