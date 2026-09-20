@@ -9,6 +9,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { StockPage } from "./pages/StockPage";
 import { ProductsPage, WarehousesPage } from "./pages/CatalogPages";
 import { MovementsPage } from "./pages/MovementsPage";
+import { OrdersPage } from "./pages/OrdersPage";
 import "./styles.css";
 
 const AuthContext = createContext(null);
@@ -114,7 +115,7 @@ function AppRoutes() {
       <Route path="products" element={<ProductsPage />} />
       <Route path="warehouses" element={<WarehousesPage />} />
       <Route path="movements" element={<MovementsPage />} />
-      <Route path="orders" element={<PlaceholderPage title="Pedidos" description="Crea pedidos y revisa su resultado." />} />
+      <Route path="orders" element={<OrdersPage />} />
     </Route>
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>;
