@@ -27,7 +27,8 @@ export function ProductsPage() {
       const payload = { ...form, minimumStock: Number(form.minimumStock) };
       if (editingId) await api.products.update(editingId, payload);
       else await api.products.create(payload);
-      setForm(empty); setEditingId(null); setState((current) => ({ ...current, message: editingId ? "Producto actualizado." : "Producto creado." })); await load();
+      const message = editingId ? "Producto actualizado." : "Producto creado.";
+      setForm(empty); setEditingId(null); await load(); setState((current) => ({ ...current, message }));
     } catch (error) { setState((current) => ({ ...current, error: error.message })); }
   };
   const edit = (product) => { setEditingId(product.id); setForm({ sku: product.sku, name: product.name, unitOfMeasure: product.unitOfMeasure, minimumStock: product.minimumStock }); };
@@ -52,7 +53,7 @@ export function WarehousesPage() {
   const [state, setState] = useState({ loading: true, error: "", message: "" });
   const load = async () => { setState({ loading: true, error: "", message: "" }); try { setWarehouses(await api.warehouses.list()); setState({ loading: false, error: "", message: "" }); } catch (error) { setState({ loading: false, error: error.message, message: "" }); } };
   useEffect(() => { load(); }, []);
-  const submit = async (event) => { event.preventDefault(); try { if (editingId) await api.warehouses.update(editingId, form); else await api.warehouses.create(form); setForm(empty); setEditingId(null); setState((current) => ({ ...current, message: editingId ? "Bodega actualizada." : "Bodega creada.", error: "" })); await load(); } catch (error) { setState((current) => ({ ...current, error: error.message })); } };
+  const submit = async (event) => { event.preventDefault(); try { if (editingId) await api.warehouses.update(editingId, form); else await api.warehouses.create(form); const message = editingId ? "Bodega actualizada." : "Bodega creada."; setForm(empty); setEditingId(null); await load(); setState((current) => ({ ...current, message })); } catch (error) { setState((current) => ({ ...current, error: error.message })); } };
   if (state.loading) return <LoadingState label="Cargando bodegas..." />;
   if (state.error && !warehouses.length) return <ErrorState message={state.error} onRetry={load} />;
   return <section className="page-section"><div className="section-heading"><div><p className="eyebrow">Catálogo</p><h2>Bodegas</h2><p className="muted">Administra las ubicaciones desde las que se despacha.</p></div><button className="button button-ghost" onClick={load}>Actualizar</button></div>
