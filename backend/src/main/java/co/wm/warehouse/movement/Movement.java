@@ -18,6 +18,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
 import org.hibernate.annotations.Check;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 @Entity
 @Table(name = "movements")
@@ -44,6 +46,7 @@ public class Movement {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "administrator_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private Admin administrator;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -107,8 +110,8 @@ public class Movement {
     public Integer getQuantity() { return quantity; }
     public Instant getCreatedAt() { return createdAt; }
     public String getReference() { return reference; }
-    public Long getAdministratorId() { return administrator.getId(); }
-    public String getAdministratorUsername() { return administrator.getUsername(); }
+    public Long getAdministratorId() { return administrator == null ? null : administrator.getId(); }
+    public String getAdministratorUsername() { return administrator == null ? null : administrator.getUsername(); }
     public Long getProductId() { return product.getId(); }
     public Long getSourceWarehouseId() { return sourceWarehouse == null ? null : sourceWarehouse.getId(); }
     public Long getDestinationWarehouseId() {
