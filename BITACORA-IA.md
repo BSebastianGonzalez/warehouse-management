@@ -238,6 +238,24 @@ No se permiten despachos parciales. En caso de cancelación, no se generan `Desp
 
 **Acepté:** mantener `ddl-auto=update` únicamente como conveniencia de desarrollo local, y dejar explícito que Flyway con `ddl-auto=validate` es requisito obligatorio antes de cualquier despliegue.
 
+---
+
+# Sesion 7 - 20/09/2026
+
+## Primera petición
+
+**Pedí:** diseñar un plan por fases para mejorar el frontend básico y realizar un commit por cada fase.
+
+**Propuso:** separar el frontend en un shell de aplicación, cliente REST, autenticación, navegación, dashboard, existencias, catálogo, movimientos y pedidos, implementando cada bloque de forma incremental y validándolo con `npm run build`.
+
+**Acepté:** utilizar React Router para la navegación declarativa y la protección de rutas. No se incorporarán Redux, Zustand ni una librería visual adicional inicialmente; el estado permanecerá local a cada vista y la sesión se conservará mediante `credentials: include`.
+
+**Límites aceptados:** el frontend reutilizará los endpoints existentes y no simulará listados de movimientos o pedidos que el backend todavía no expone. Tampoco se crearán endpoints nuevos para facilitar la interfaz sin una decisión explícita.
+
+**Estructura acordada:** Dashboard, Inventory, Products, Warehouses, Orders y Authentication, con textos visibles en español y código fuente en inglés.
+
+**Flujo de trabajo acordado:** un commit por fase, con validación del build y comprobaciones de los flujos REST relevantes antes de avanzar.
+
 **Quedó sin verificar:** cómo se vería la migración inicial de Flyway aplicada sobre una base de datos que ya tiene datos.
 
 ## 4. Cuarta petición
