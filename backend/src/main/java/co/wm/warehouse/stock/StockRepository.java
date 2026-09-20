@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface StockRepository extends JpaRepository<Stock, Long> {
 
-    Optional<Stock> findByProductIdAndWarehouseId(Long productId, Long warehouseId);
+    Optional<Stock> findByProduct_IdAndWarehouse_Id(Long productId, Long warehouseId);
 
     java.util.List<Stock> findAllByProductId(Long productId);
 

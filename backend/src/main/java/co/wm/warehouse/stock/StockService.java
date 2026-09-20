@@ -34,7 +34,7 @@ public class StockService {
     public StockResponse find(Long productId, Long warehouseId) {
         ensureProductExists(productId);
         ensureWarehouseExists(warehouseId);
-        return stockRepository.findByProductIdAndWarehouseId(productId, warehouseId)
+        return stockRepository.findByProduct_IdAndWarehouse_Id(productId, warehouseId)
                 .map(StockResponse::from)
                 .orElse(new StockResponse(productId, warehouseId, 0));
     }
@@ -72,7 +72,7 @@ public class StockService {
     public StockReconciliationResponse reconcile(Long productId, Long warehouseId) {
         ensureProductExists(productId);
         ensureWarehouseExists(warehouseId);
-        int projectedQuantity = stockRepository.findByProductIdAndWarehouseId(productId, warehouseId)
+        int projectedQuantity = stockRepository.findByProduct_IdAndWarehouse_Id(productId, warehouseId)
                 .map(Stock::getQuantity)
                 .orElse(0);
         int reconstructedQuantity = movementRepository.calculateBalance(productId, warehouseId);
