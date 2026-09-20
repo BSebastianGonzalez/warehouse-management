@@ -1,28 +1,28 @@
 # Sesion 1 - 18/09/2024
 
-# 1. Primera peticion 
+## 1. Primera peticion
 
-Pedí: candidatas de asunciones para ASSUMPTIONS.md, empezando por analizar la consulta "Existencias por producto y bodega, señalando las que estan por debajo del minimo".
+**Pedí:** analizar cómo debía señalarse el stock por debajo del mínimo.
 
-Propuse: que el mínimo se evaluara por bodega individual, con el argumento de que evaluarlo por total implicaría stock "fuera de las bodegas".
+**Propuse:** inicialmente evaluar el mínimo por bodega individual.
 
-Rechacé y por qué: el agente señaló que ese argumento tenía un error logico, que es el que los productos finalmente se encuentran en las bodegas, no hay producto externo a ellas. Además, evaluar por bodega individual genera falsas alarmas (una bodega en cero con otra bodega llena) y no es consistente con la regla de que un pedido puede despacharse combinando varias bodegas.
+**Rechacé y por qué:** se observó que una bodega en cero no implica que falte producto si otra bodega tiene suficiente. Además, los pedidos pueden combinar varias bodegas.
 
-Acepté con ajuste: el umbral se evalúa sobre el total del producto (suma de todas las bodegas); donde se determino agregar un valor por defecto de 10 unidades para stock_minimo cuando no se configura explícitamente.
+**Acepté:** evaluar el mínimo sobre el total del producto entre todas las bodegas y usar 10 como valor por defecto de `minimumStock`.
 
-Quedó sin verificar: si conviene una segunda señal no bloqueante para "bodega en cero" aunque el total del producto esté sano, esto es una propuesta no resuelta.
+**Quedó sin verificar:** si más adelante conviene mostrar una alerta adicional para bodegas individuales en cero.
 
----
+## 2. Segunda peticion
 
-# 2. Segunda peticion 
+**Pedí:** decidir si la concurrencia de traslados debía quedar como asunción o como decisión arquitectónica.
 
-Pedí: decidir si la concurrencia entre traslados simultáneos sobre el mismo producto y bodega se documenta como asunción o como ADR.
+**Propuso:** dejarla como una asunción simple y confiar en el comportamiento por defecto de la base de datos.
 
-Me propuso: dejarla como una asunción simple, confiando en que el motor de base de datos maneja bien varias operaciones al mismo tiempo por defecto.
+**Rechacé y por qué:** la concurrencia afecta directamente la consistencia del inventario y el riesgo aceptado por el sistema.
 
-Decidí: subirla a ADR en vez de asunción, porque es una decisión de arquitectura (qué tan estricto debe ser el control de operaciones simultáneas y qué riesgo se acepta).
+**Acepté:** documentarla en un ADR dedicado a concurrencia.
 
-Quedó sin verificar: cómo se comporta exactamente el motor de base de datos que se termine usando, y si hace falta configurarlo explícitamente para que coincida con lo que diga el ADR.
+**Quedó sin verificar:** el comportamiento exacto del motor de base de datos configurado y si requerirá ajustes adicionales.
 
 ---
 
@@ -30,149 +30,212 @@ Quedó sin verificar: cómo se comporta exactamente el motor de base de datos qu
 
 ## 1. Primera peticion
 
-**Pedí:** definir cómo debía comportarse un pedido cuando una de sus líneas no tiene suficiente inventario.
+**Pedí:** definir qué ocurre cuando una línea de pedido no tiene inventario suficiente.
 
-**Propuso:** considerar estados intermedios como `PENDIENTE`, `PARCIAL` y `DESPACHADO`, permitiendo que un pedido pudiera quedar parcialmente atendido.
+**Propuso:** usar estados intermedios como `PENDING`, `PARTIALLY_DISPATCHED` y `DISPATCHED`.
 
-**Rechacé y por qué:** se decidió que el sistema sería más sencillo si el pedido se resolviera inmediatamente al registrarse. Además, permitir despachos parciales complicaría la consistencia del inventario y el significado del estado del pedido.
+**Rechacé y por qué:** los estados intermedios complicarían la consistencia y no están contemplados en el alcance.
 
-**Acepté:** el procesamiento de pedidos será síncrono. Al registrar un pedido, primero se valida si todas sus líneas pueden ser atendidas completamente utilizando una o varias bodegas. Si todas pueden atenderse, el pedido queda `DESPACHADO`. Si alguna línea no puede completarse, el pedido queda `CANCELADO`.
+**Acepté:** el pedido se procesa de forma síncrona: queda `DISPATCHED` si todas las líneas se completan, o `CANCELLED` si alguna no puede completarse. No hay despachos parciales.
 
-No se permiten despachos parciales. En caso de cancelación, no se generan `DespachoDetalle` ni movimientos `SALIDA`. La cantidad que falta se almacena en `LineaPedido.cantidad_faltante`.
-
-**Quedó sin verificar:** el comportamiento exacto que deberá tener la transacción si, después de realizar la validación inicial, otra operación concurrente consume parte del stock antes de que el pedido realice sus descuentos.
-
----
+**Quedó sin verificar:** el resultado exacto si otra operación consume stock entre la validación inicial y el descuento.
 
 ## 2. Segunda peticion
 
-**Pedí:** determinar si `Existencia` debía ser la fuente principal del inventario o si los movimientos debían considerarse la fuente de verdad.
+**Pedí:** decidir si `Stock` o `Movement` debía ser la fuente de verdad.
 
-**Propuso:** mantener `Existencia` como el saldo actual consultable y utilizar `Movimiento` como historial de los cambios realizados.
+**Propuso:** usar `Stock` como saldo consultable y `Movement` como historial.
 
-**Acepté:** `Movimiento` será la fuente de verdad del inventario y `Existencia` funcionará como una proyección del saldo actual. Cada entrada, salida o traslado deberá registrar su movimiento correspondiente y actualizar la existencia dentro de la misma transacción.
+**Acepté con precisión:** `Movement` es la fuente de verdad y `Stock` es una proyección actualizada dentro de la misma transacción.
 
-**Motivo de la decisión:** de esta forma se conserva un historial de las operaciones y es posible reconstruir el saldo a partir de los movimientos, mientras que `Existencia` permite realizar las consultas de stock de manera eficiente.
+**Motivo:** así se conserva la trazabilidad y también se pueden hacer consultas eficientes.
 
-**Quedó sin verificar:** la estrategia concreta para reconstruir el saldo a partir del historial y cómo se comprobará que la proyección `Existencia` no se desincronice respecto de los movimientos.
-
----
+**Quedó sin verificar:** la estrategia concreta para reconstruir y reconciliar el saldo.
 
 ## 3. Tercera peticion
 
-**Pedí:** analizar qué debía ocurrir con los productos marcados como `descontinuado`, especialmente cuando se realiza un traslado entre bodegas.
+**Pedí:** definir qué puede hacer un producto descontinuado.
 
-**Propuso:** permitir el traslado de productos descontinuados porque un traslado no representa necesariamente una entrada de inventario al sistema, sino un cambio de ubicación.
+**Propuso:** permitir traslados porque no agregan unidades al inventario global.
 
-**Rechacé y por qué:** se interpretó que recibir el producto en la bodega de destino constituye una nueva entrada en esa bodega. Permitir el traslado permitiría incrementar la existencia del producto en otra ubicación, contradiciendo la regla de que un producto descontinuado no admite nuevas entradas.
+**Rechacé y por qué:** el traslado sí incrementa la existencia en la bodega destino y, por tanto, representa una nueva entrada allí.
 
-**Acepté:** un producto descontinuado puede mantener las existencias que ya posee y puede tener operaciones de salida, incluyendo despachos de pedidos, pero no puede recibir nuevas entradas. Por tanto, los traslados de productos descontinuados quedan rechazados.
+**Acepté:** un producto descontinuado puede salir, pero no puede recibir `INBOUND` ni `TRANSFER`.
 
-**Quedó sin verificar:** cómo deberá reflejarse esta restricción tanto en las validaciones del servicio como en las pruebas de los diferentes tipos de movimiento.
-
----
+**Quedó sin verificar:** que la regla se aplique de forma uniforme en servicio, restricciones y pruebas.
 
 ## 4. Cuarta peticion
 
-**Pedí:** definir las tecnologías y la estructura general del sistema considerando que el proyecto debe desarrollarse en un periodo corto.
+**Pedí:** escoger tecnologías y estructura para desarrollar rápido sin perder separación.
 
-**Propuso:** utilizar un backend con Spring Boot y una base de datos relacional, dejando abierta la posibilidad de utilizar diferentes tecnologías para la interfaz.
+**Propuso:** Spring Boot y base relacional para el backend, dejando abierta la interfaz.
 
-**Acepté:** se decidió utilizar Java con Spring Boot para el backend, MySQL para persistencia y React para la interfaz. El frontend se comunicará con el backend mediante una API REST.
+**Acepté:** Java/Spring Boot, JPA/MySQL, React y API REST.
 
-**Motivo de la decisión:** se busca utilizar una arquitectura conocida, reducir el riesgo técnico durante el tiempo disponible y mantener separadas la interfaz, las reglas de negocio y la persistencia.
+**Motivo:** el stack reduce riesgo técnico y separa interfaz, reglas y persistencia.
 
-**Quedó sin verificar:** la configuración concreta de Spring Data JPA, la conexión con MySQL y la estructura definitiva de los endpoints REST.
-
----
+**Quedó sin verificar:** la configuración concreta de Maven, JPA, MySQL y endpoints.
 
 ## 5. Quinta peticion
 
-**Pedí:** determinar cómo organizar el backend para evitar mezclar las reglas de negocio con los controladores y el acceso a la base de datos.
+**Pedí:** organizar el backend sin mezclar reglas de negocio con HTTP y persistencia.
 
-**Propuso:** una arquitectura monolítica separada en las capas `Controller`, `Service` y `Repository`, organizada por dominios funcionales.
+**Propuso:** monolito modular por dominio con capas Controller, Service y Repository.
 
-**Acepté:** se utilizará un monolito modular con paquetes orientados al dominio, como `producto`, `bodega`, `movimiento` y `pedido`. Los `Controller` se encargarán de recibir las solicitudes HTTP, los `Service` contendrán las reglas de negocio y los `Repository` gestionarán la persistencia mediante Spring Data JPA.
+**Acepté:** paquetes separados para Product, Warehouse, Stock, Movement, Admin y Order.
 
-**Rechacé:** utilizar microservicios, debido a que introducirían complejidad adicional sin ser necesarios para el alcance del sistema.
+**Rechacé:** microservicios, porque añadirían complejidad innecesaria para el alcance.
 
-**Quedó sin verificar:** la estructura concreta de paquetes y clases una vez que comience la implementación del backend.
+**Quedó sin verificar:** la estructura final de clases después de implementar los módulos.
 
 ---
 
 # Sesion 3 - 19/09/2026
 
-## Auditoria y correccion del nucleo Stock/Movement
+## 1. Primera peticion
 
-Se revisaron `AGENTS.md`, `ASSUMPTIONS.md`, los ADR de arquitectura y concurrencia, y la
-implementacion existente de `Stock` y `Movement`.
+**Pedí:** revisar si `Stock` y `Movement` cumplían realmente el modelo y no solo los casos felices.
 
-Se corrigio lo siguiente:
+**Propuso:** agregar validaciones de entidad, restricciones persistentes, consultas de reconciliación y pruebas adicionales.
 
-- `Stock` y `Product` validan sus cantidades tambien desde el modelo Java y declaran
-  restricciones `CHECK` para impedir cantidades negativas.
-- `Movement` valida producto, cantidad y combinaciones de bodegas, y declara restricciones
-  persistentes para las reglas de `INBOUND`, `OUTBOUND` y `TRANSFER`.
-- La consulta por producto ahora incluye todas las bodegas, incluso cuando la existencia es
-  cero; las consultas con producto o bodega inexistentes responden con el error de recurso no
-  encontrado en lugar de inventar un saldo cero.
-- El resumen general carga stocks y bodegas en bloque para evitar el patron N+1.
-- Se agrego una consulta de reconstruccion desde `Movement` y un endpoint de reconciliacion para
-  comparar el saldo proyectado de `Stock` con el saldo historico.
-- La actualizacion atomica de incrementos ahora verifica que la operacion haya afectado filas.
-- Se agregaron pruebas para una entrada exitosa y se conservaron las pruebas de rechazos existentes.
+**Acepté:** mantener `Movement` como historial, `Stock` como proyección, incluir bodegas con cantidad cero y devolver error cuando producto o bodega no existen.
 
-La base de datos actual utiliza MySQL, por lo que el incremento/creacion atomico sigue usando
-`INSERT ... ON DUPLICATE KEY UPDATE`. La asociacion obligatoria con `Admin` permanece como el
-siguiente incremento porque requiere implementar primero la sesion HTTP y no se debe inventar un
-administrador dentro de los movimientos.
+**Motivo:** un saldo cero inventado puede ocultar errores y la reconciliación permite detectar desincronización.
 
-## 6. Trazabilidad del administrador
+**Quedó sin verificar:** una reconstrucción completa contra una base MySQL real después de muchos movimientos.
 
-Se aclaro en `AGENTS.md` que toda operacion que cambie o registre estado de negocio debe ser
-trazable al `Administrador` autenticado. Esto incluye entradas, salidas, traslados, pedidos,
-despachos y futuras operaciones de inventario.
+## 2. Segunda peticion
 
-En la rama funcional siguiente se implemento el fundamento de esta regla:
+**Pedí:** aclarar cómo se agregan productos a una bodega sin permitir CRUD directo de stock.
 
-- `Admin` almacena username, nombre y solo el hash de la contraseña.
-- `POST /api/auth/register` permite crear el administrador inicial y cierra el registro
-  despues de la primera cuenta.
-- `POST /api/auth/login` crea una sesion HTTP; `POST /api/auth/logout` la invalida.
-- Las operaciones de movimiento requieren una sesion autenticada.
-- `Movement` guarda `administrator_id` y las respuestas exponen el administrador responsable
-  sin exponer su contraseña.
+**Propuso:** usar `POST /api/movements/inbound`; la primera entrada crea la combinación producto-bodega y las siguientes incrementan la cantidad.
 
-## 7. Pedidos sincronicos
+**Acepté:** no crear CRUD de `Stock`. `OUTBOUND` queda para salidas generales desde una única bodega y los pedidos reutilizan el descuento atómico.
 
-Se inicio el modulo de pedidos en la rama `feature/synchronous-orders`:
+**Rechacé:** permitir que el frontend actualice directamente la existencia, porque rompería el historial.
 
-- `Order`, `OrderLine` y `DispatchDetail` persisten el pedido, sus lineas y el desglose
-  por bodega.
-- `POST /api/orders` requiere sesion de administrador y evalua todas las lineas antes de
-  descontar inventario.
-- Un pedido insuficiente queda `CANCELLED`, conserva `missingQuantity` y no genera salidas
-  ni detalles de despacho.
-- Un pedido completo queda `DISPATCHED` y puede consumir una linea desde varias bodegas.
-- Cada salida generada por el pedido conserva la trazabilidad del administrador y referencia
-  el pedido.
-- `GET /api/orders/{id}` consulta el detalle resultante.
+**Quedó sin verificar:** si será necesario un flujo separado para ajustes por conteo físico.
 
-La implementacion mantiene la transaccion unica y reutiliza el descuento condicional de
-existencias para que una carrera de concurrencia revierta el pedido completo.
+## 3. Tercera peticion
 
-## 8. Interfaz React inicial
+**Pedí:** corregir los endpoints de consulta de stock que devolvían `500`.
 
-Se agrego `frontend/` como aplicacion React/Vite para operar el backend existente:
+**Propuso:** revisar la navegación de propiedades JPA en el repositorio.
 
-- inicio de sesion y cierre de sesion usando la cookie de `HttpSession`;
-- dashboard de existencias por producto y bodega, con alerta de minimo;
-- formulario para registrar entradas, salidas y traslados;
-- manejo visible de errores y respuestas de la API;
-- configuracion de CORS restringida al origen local `http://localhost:5173`.
+**Acepté:** cambiar la consulta a `findByProduct_IdAndWarehouse_Id`, porque `productId` y `warehouseId` son propiedades anidadas.
 
-La interfaz usa `VITE_API_URL` para cambiar la URL del backend sin modificar el codigo.
+**Quedó sin verificar:** cubrir todos los endpoints equivalentes con pruebas HTTP.
 
-La compilacion de frontend y la suite Maven del backend fueron ejecutadas correctamente. Se mantiene
-`ddl-auto=update` solo como decision de desarrollo local; Flyway queda como paso obligatorio antes
-de compartir o desplegar el esquema.
+---
+
+# Sesion 4 - 19/09/2026
+
+## 1. Primera peticion
+
+**Pedí:** añadir trazabilidad del administrador sin implementar autenticación avanzada.
+
+**Propuso:** crear `Admin`, almacenar BCrypt, usar `HttpSession` y proteger movimientos y pedidos.
+
+**Acepté:** registro inicial, login, logout y asociación obligatoria de movimientos y pedidos con el administrador autenticado.
+
+**Rechacé:** JWT, OAuth, roles y recuperación de contraseña, porque están fuera del alcance.
+
+**Quedó sin verificar:** cómo cerrar o proteger operativamente el registro inicial fuera de un ambiente local.
+
+## 2. Segunda peticion
+
+**Pedí:** decidir si Producto y Bodega también requerían sesión.
+
+**Propuso:** proteger todas las escrituras para tener una política uniforme.
+
+**Rechacé y por qué:** el alcance solo exige sesión para movimientos y pedidos, y todavía no existen roles para distinguir administración de catálogo.
+
+**Acepté:** mantener el catálogo público y auditar solo las operaciones que cambian el inventario o crean pedidos.
+
+**Quedó sin verificar:** si una versión posterior necesitará auditar también la edición del catálogo.
+
+---
+
+# Sesion 5 - 19/09/2026
+
+## 1. Primera peticion
+
+**Pedí:** completar el modelo funcional después de catálogo, movimientos, stock y autenticación.
+
+**Propuso:** implementar `Order`, `OrderLine` y `DispatchDetail` con evaluación síncrona.
+
+**Acepté:** despachar desde una o varias bodegas cuando sea posible y cancelar sin efectos cuando falte stock.
+
+**Rechacé:** estados pendientes o despachos parciales, porque no forman parte del flujo definido.
+
+**Quedó sin verificar:** una política explícita de prioridad entre bodegas; inicialmente se usa el orden de la consulta.
+
+## 2. Segunda peticion
+
+**Pedí:** garantizar que un pedido no dejara cambios parciales.
+
+**Propuso:** validar todas las líneas antes de descontar y ejecutar descuentos, detalles y movimientos dentro de una transacción.
+
+**Acepté:** una falla de actualización condicional debe lanzar excepción y revertir todo. Un pedido cancelado no genera `OUTBOUND`, detalles ni cambios de stock.
+
+**Quedó sin verificar:** una prueba real de concurrencia con dos transacciones simultáneas en MySQL.
+
+## 3. Tercera peticion
+
+**Pedí:** decidir cómo relacionar las salidas con el pedido.
+
+**Propuso:** crear una relación JPA directa entre `Movement` y `Order`.
+
+**Rechacé por ahora:** agregar esa relación antes de estabilizar el modelo, porque ya existe `reference = ORDER:{id}`.
+
+**Acepté:** conservar la referencia textual inicialmente y evaluar una FK si luego se requieren reportes o integridad referencial más estricta.
+
+**Quedó sin verificar:** si la referencia textual será suficiente para auditoría y devoluciones.
+
+---
+
+# Sesion 6 - 19/09/2026
+
+## 1. Primera peticion
+
+**Pedí:** añadir una interfaz para operar el sistema sin depender exclusivamente de Swagger.
+
+**Propuso:** crear un frontend React/Vite que consumiera la API y conservara las reglas en el backend.
+
+**Acepté:** incluir login/logout, creación básica de catálogo, dashboard de stock, entradas, salidas, traslados y creación de pedidos.
+
+**Rechacé:** duplicar las reglas de inventario o crear otra autenticación en React.
+
+**Quedó sin verificar:** edición completa del catálogo y consulta visual detallada de pedidos; la primera interfaz cubre la operación esencial.
+
+## 2. Segunda peticion
+
+**Pedí:** conectar React con la sesión HTTP del backend.
+
+**Propuso:** enviar `credentials: include` y habilitar CORS solo para `http://localhost:5173`.
+
+**Acepté:** usar `VITE_API_URL` para cambiar el backend y limitar CORS al entorno local.
+
+**Quedó sin verificar:** dominios definitivos, HTTPS, cookies seguras y CORS de producción.
+
+## 3. Tercera peticion
+
+**Pedí:** decidir si reemplazar inmediatamente `ddl-auto=update` por Flyway.
+
+**Propuso:** introducir Flyway antes de seguir agregando funcionalidades.
+
+**Rechacé por ahora:** hacerlo antes de estabilizar pedidos y frontend, porque las migraciones serían difíciles de corregir durante cambios frecuentes.
+
+**Acepté:** mantener `ddl-auto=update` solo en desarrollo y dejar Flyway con `ddl-auto=validate` como requisito previo a despliegue.
+
+**Quedó sin verificar:** la migración inicial sobre una base existente.
+
+## 4. Cuarta peticion
+
+**Pedí:** comprobar que el incremento pudiera integrarse.
+
+**Propuso:** ejecutar pruebas Maven, compilar React, revisar Git y publicar la rama para el PR hacia `main`.
+
+**Acepté:** considerar verificado el incremento cuando `backend\mvnw.cmd -q test` y `frontend\npm run build` terminaran correctamente y el worktree quedara limpio.
+
+**Quedó sin verificar:** una prueba end-to-end con backend levantado y datos reales de MySQL.
