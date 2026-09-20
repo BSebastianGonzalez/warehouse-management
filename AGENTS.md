@@ -479,9 +479,12 @@ La vista debe consumir `GET /api/movements` y:
 
 * Requerir una sesión autenticada.
 * Mostrar tipo, fecha, producto, cantidad, bodega de origen, bodega de
-  destino, referencia y administrador responsable.
+  destino y administrador responsable.
 * Permitir filtrar por tipo, producto, bodega (como origen o destino),
-  administrador, rango de fechas y referencia.
+  administrador y rango de fechas.
+* El filtro de administrador debe ser opcional y presentarse como una lista de
+  administradores. Si no se selecciona ninguno, deben mostrarse movimientos de
+  todos los administradores.
 * Mostrar los resultados ordenados del más reciente al más antiguo.
 * Soportar paginación y estados de carga, vacío y error.
 
@@ -521,7 +524,9 @@ sesión autenticada y:
 
 * Mostrar identificador, fecha, estado, administrador responsable, cantidad de
   líneas, cantidad solicitada total y cantidad faltante total.
-* Permitir filtrar por estado, administrador y rango de fechas.
+* Permitir filtrar por estado, administrador opcional y rango de fechas. El
+  administrador debe seleccionarse desde una lista; sin selección se consultan
+  pedidos de todos los administradores.
 * Mostrar los resultados del más reciente al más antiguo con paginación.
 * Permitir abrir el detalle mediante `GET /api/orders/{id}`.
 * Mostrar en el detalle las líneas, faltantes y bodegas desde las que se
@@ -530,6 +535,11 @@ sesión autenticada y:
 
 El listado debe usar un DTO resumido; no debe cargar ni presentar todas las
 líneas y despachos de cada pedido hasta que el usuario abra su detalle.
+
+La implementación interna de los filtros puede usar `Specification`, pero debe
+inicializar siempre una especificación no nula cuando no se envían filtros. La
+consulta sin filtros es válida y no debe producir errores de tipo
+`Specification must not be null`.
 
 ### Reconciliación de existencias
 
