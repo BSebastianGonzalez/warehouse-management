@@ -1,10 +1,13 @@
 package co.wm.warehouse.admin;
 
+import java.util.List;
+
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -29,6 +32,12 @@ public class AdminController {
     @PostMapping("/login")
     public AdminResponse login(@Valid @RequestBody LoginRequest request, HttpSession session) {
         return adminService.login(request, session);
+    }
+
+    @GetMapping("/administrators")
+    public List<AdminResponse> findAll(HttpSession session) {
+        adminService.requireAuthenticated(session);
+        return adminService.findAll();
     }
 
     @PostMapping("/logout")

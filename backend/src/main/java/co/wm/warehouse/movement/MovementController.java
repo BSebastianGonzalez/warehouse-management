@@ -36,12 +36,11 @@ public class MovementController {
             @RequestParam(required = false) Long administratorId,
             @RequestParam(required = false) java.time.Instant from,
             @RequestParam(required = false) java.time.Instant to,
-            @RequestParam(required = false) String reference,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             HttpSession session) {
         adminService.requireAuthenticated(session);
         return movementService.findAll(
-                type, productId, warehouseId, administratorId, from, to, reference, pageable);
+                type, productId, warehouseId, administratorId, from, to, pageable);
     }
 
     @PostMapping("/inbound")

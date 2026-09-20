@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.List;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -68,5 +69,18 @@ class AdminServiceTest {
         assertThatThrownBy(() -> adminService.login(
                 new LoginRequest("admin", "wrong-password"), session))
                 .isInstanceOf(AdminAuthenticationException.class);
+    }
+
+    @Test
+    void listsAdministratorsWithoutExposingPasswords() {
+        Admin admin = new Admin("admin", "hashed-password", "Main Admin");
+        when(adminRepository.findAll()).thenReturn(List.of(admin));
+
+        List<AdminResponse> response = adminService.findAll();
+
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).username()).isEqualTo("admin");
+        assertThat(response.get(0).name()).isEqualTo("Main Admin");
+        verify(adminRepository).findAll();
     }
 }

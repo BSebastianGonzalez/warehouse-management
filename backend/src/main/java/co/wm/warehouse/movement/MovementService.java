@@ -56,9 +56,8 @@ public class MovementService {
             Long administratorId,
             Instant from,
             Instant to,
-            String reference,
             Pageable pageable) {
-        Specification<Movement> specification = Specification.where((Specification<Movement>) null);
+        Specification<Movement> specification = Specification.unrestricted();
         if (type != null) {
             specification = specification.and((root, query, builder) -> builder.equal(root.get("type"), type));
         }
@@ -86,10 +85,6 @@ public class MovementService {
         if (to != null) {
             specification = specification.and((root, query, builder) ->
                     builder.lessThanOrEqualTo(root.get("createdAt"), to));
-        }
-        if (reference != null && !reference.isBlank()) {
-            specification = specification.and((root, query, builder) ->
-                    builder.like(builder.lower(root.get("reference")), "%" + reference.trim().toLowerCase() + "%"));
         }
         return movementRepository.findAll(specification, pageable).map(MovementReadResponse::from);
     }
