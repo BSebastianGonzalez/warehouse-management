@@ -6,9 +6,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Check;
 
 @Entity
 @Table(name = "products")
+@Check(constraints = "minimum_stock >= 0")
 public class Product {
 
     @Id
@@ -34,6 +36,7 @@ public class Product {
     }
 
     public Product(String sku, String name, String unitOfMeasure, Integer minimumStock, boolean discontinued) {
+        validateMinimumStock(minimumStock);
         this.sku = sku;
         this.name = name;
         this.unitOfMeasure = unitOfMeasure;
@@ -65,11 +68,22 @@ public class Product {
         return discontinued;
     }
 
+    public void changeDiscontinued(boolean discontinued) {
+        this.discontinued = discontinued;
+    }
+
     public void update(String sku, String name, String unitOfMeasure, Integer minimumStock, boolean discontinued) {
+        validateMinimumStock(minimumStock);
         this.sku = sku;
         this.name = name;
         this.unitOfMeasure = unitOfMeasure;
         this.minimumStock = minimumStock;
         this.discontinued = discontinued;
+    }
+
+    private void validateMinimumStock(Integer minimumStock) {
+        if (minimumStock == null || minimumStock < 0) {
+            throw new IllegalArgumentException("Minimum stock cannot be negative");
+        }
     }
 }

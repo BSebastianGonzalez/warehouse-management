@@ -54,6 +54,13 @@ public class ProductService {
         return ProductResponse.from(product);
     }
 
+    @Transactional
+    public ProductResponse changeDiscontinued(Long id, DiscontinuedRequest request) {
+        Product product = findProduct(id);
+        product.changeDiscontinued(request.discontinued());
+        return ProductResponse.from(product);
+    }
+
     private Product findProduct(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
