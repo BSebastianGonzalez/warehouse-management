@@ -32,13 +32,17 @@ function useAuth() {
 }
 
 function LoginPage() {
-  const { login, register } = useAuth();
+  const { admin, login, register } = useAuth();
   const navigate = useNavigate();
   const [registering, setRegistering] = useState(false);
   const [form, setForm] = useState({ username: "", password: "", name: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (admin) {
+    return <Navigate to="/" replace />;
+  }
 
   const submit = async (event) => {
     event.preventDefault();
@@ -88,13 +92,18 @@ function ProtectedRoute() {
   return admin ? <AppLayout admin={admin} onLogout={logout} /> : <Navigate to="/login" replace state={{ from: location }} />;
 }
 
+function GuestRoute() {
+  const { admin } = useAuth();
+  return admin ? <Navigate to="/" replace /> : <LoginPage />;
+}
+
 function PlaceholderPage({ title, description }) {
   return <section className="page-section"><div className="section-heading"><div><p className="eyebrow">Próximamente</p><h2>{title}</h2><p className="muted">{description}</p></div></div><div className="panel empty-panel"><span className="empty-icon">✦</span><strong>Esta sección se habilitará en la siguiente fase</strong><span className="muted">La base de navegación ya está lista.</span></div></section>;
 }
 
 function AppRoutes() {
   return <Routes>
-    <Route path="/login" element={<LoginPage />} />
+    <Route path="/login" element={<GuestRoute />} />
     <Route element={<ProtectedRoute />}>
       <Route index element={<PlaceholderPage title="Resumen de inventario" description="Una vista rápida del estado de tus productos y bodegas." />} />
       <Route path="inventory" element={<PlaceholderPage title="Existencias" description="Consulta el stock por producto y bodega." />} />
