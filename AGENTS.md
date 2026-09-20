@@ -98,10 +98,14 @@ Project documentation may remain in Spanish unless otherwise specified. The code
 ### Gestión de catálogo
 - Registrar, consultar, actualizar productos (incluyendo `stock_minimo` y marcar/desmarcar `descontinuado`).
 - Registrar, consultar, actualizar bodegas.
+- Crear o actualizar un producto no crea ni modifica existencias en ninguna bodega.
 
 ### Movimientos de inventario
 - Registrar una `ENTRADA` de producto en una bodega (rechazada si el producto está `descontinuado`).
+- La `ENTRADA` es la operación oficial para agregar inventario a una bodega: la primera entrada crea la combinación producto-bodega en `Existencia` y las siguientes entradas incrementan su cantidad.
+- La cantidad inicial de un producto en una bodega también debe registrarse como `ENTRADA`; no existe un CRUD directo para `Existencia`.
 - Registrar una `SALIDA` de producto desde una bodega.
+- La `SALIDA` (`OUTBOUND`) descuenta inventario de una única bodega y puede utilizarse para salidas generales mientras no exista un pedido que origine el despacho.
 - Registrar un `TRASLADO` entre dos bodegas (rechazado si el producto está `descontinuado`, y si la bodega de origen no tiene existencia suficiente).
 - Todo movimiento queda asociado al `Administrador` que lo registró.
 
