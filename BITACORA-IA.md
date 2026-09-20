@@ -142,3 +142,21 @@ En la rama funcional siguiente se implemento el fundamento de esta regla:
 - Las operaciones de movimiento requieren una sesion autenticada.
 - `Movement` guarda `administrator_id` y las respuestas exponen el administrador responsable
   sin exponer su contraseña.
+
+## 7. Pedidos sincronicos
+
+Se inicio el modulo de pedidos en la rama `feature/synchronous-orders`:
+
+- `Order`, `OrderLine` y `DispatchDetail` persisten el pedido, sus lineas y el desglose
+  por bodega.
+- `POST /api/orders` requiere sesion de administrador y evalua todas las lineas antes de
+  descontar inventario.
+- Un pedido insuficiente queda `CANCELLED`, conserva `missingQuantity` y no genera salidas
+  ni detalles de despacho.
+- Un pedido completo queda `DISPATCHED` y puede consumir una linea desde varias bodegas.
+- Cada salida generada por el pedido conserva la trazabilidad del administrador y referencia
+  el pedido.
+- `GET /api/orders/{id}` consulta el detalle resultante.
+
+La implementacion mantiene la transaccion unica y reutiliza el descuento condicional de
+existencias para que una carrera de concurrencia revierta el pedido completo.
