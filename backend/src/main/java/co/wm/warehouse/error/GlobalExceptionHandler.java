@@ -6,6 +6,8 @@ import co.wm.warehouse.product.DuplicateSkuException;
 import co.wm.warehouse.product.ProductNotFoundException;
 import co.wm.warehouse.warehouse.DuplicateWarehouseNameException;
 import co.wm.warehouse.warehouse.WarehouseNotFoundException;
+import co.wm.warehouse.movement.InsufficientStockException;
+import co.wm.warehouse.movement.InvalidMovementException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -38,6 +40,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleDuplicateWarehouseName(DuplicateWarehouseNameException exception) {
         return error(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler({InsufficientStockException.class, InvalidMovementException.class})
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ApiError handleInvalidMovement(RuntimeException exception) {
+        return error(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
