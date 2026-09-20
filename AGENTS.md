@@ -121,6 +121,9 @@ Project documentation may remain in Spanish unless otherwise specified. The code
 ### Autenticación
 - Login de `Administrador` mediante `username`/`password`.
 - Las operaciones de escritura (movimientos, pedidos) requieren sesión iniciada.
+- El `Administrador` autenticado es el actor de toda operación que cambie o registre estado de negocio.
+- Cada `ENTRADA`, `SALIDA`, `TRASLADO`, pedido y despacho debe quedar trazablemente asociado al `Administrador` que lo realizó.
+- No se deben crear movimientos ni pedidos anónimos; las futuras operaciones de inventario o pedidos que modifiquen el estado también deben conservar esta asociación.
 
 ## Invariantes del inventario
 
