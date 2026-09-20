@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
         info = @Info(
                 title = "Warehouse Management API",
                 version = "v1",
-                description = "REST API for products and warehouses in the multi-warehouse inventory system"),
+                description = "REST API for catalog, authenticated inventory movements, and stock queries in the multi-warehouse inventory system"),
         servers = @Server(url = "/", description = "Current server"))
 public class OpenApiConfig {
 }

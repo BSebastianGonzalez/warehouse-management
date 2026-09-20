@@ -10,7 +10,9 @@ public record MovementResponse(
         Long destinationWarehouseId,
         Integer quantity,
         Instant createdAt,
-        String reference) {
+        String reference,
+        Long administratorId,
+        String administratorUsername) {
 
     public static MovementResponse from(Movement movement) {
         return new MovementResponse(
@@ -21,6 +23,8 @@ public record MovementResponse(
                 movement.getDestinationWarehouseId(),
                 movement.getQuantity(),
                 movement.getCreatedAt(),
-                movement.getReference());
+                movement.getReference(),
+                movement.getAdministratorId(),
+                movement.getAdministratorUsername());
     }
 }
