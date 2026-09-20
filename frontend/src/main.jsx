@@ -8,6 +8,7 @@ import { Notice } from "./components/Feedback";
 import { DashboardPage } from "./pages/DashboardPage";
 import { StockPage } from "./pages/StockPage";
 import { ProductsPage, WarehousesPage } from "./pages/CatalogPages";
+import { MovementsPage } from "./pages/MovementsPage";
 import "./styles.css";
 
 const AuthContext = createContext(null);
@@ -112,7 +113,7 @@ function AppRoutes() {
       <Route path="inventory" element={<StockPage />} />
       <Route path="products" element={<ProductsPage />} />
       <Route path="warehouses" element={<WarehousesPage />} />
-      <Route path="movements" element={<PlaceholderPage title="Movimientos" description="Registra entradas, salidas y traslados." />} />
+      <Route path="movements" element={<MovementsPage />} />
       <Route path="orders" element={<PlaceholderPage title="Pedidos" description="Crea pedidos y revisa su resultado." />} />
     </Route>
     <Route path="*" element={<Navigate to="/" replace />} />
