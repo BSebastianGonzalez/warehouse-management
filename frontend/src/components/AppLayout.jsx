@@ -6,7 +6,10 @@ const navigation = [
   { to: "/products", label: "Productos", icon: "◇" },
   { to: "/warehouses", label: "Bodegas", icon: "⌂" },
   { to: "/movements", label: "Movimientos", icon: "↔" },
-  { to: "/orders", label: "Pedidos", icon: "☷" }
+  { to: "/movement-history", label: "Historial de movimientos", icon: "≡" },
+  { to: "/orders", label: "Pedidos", icon: "☷" },
+  { to: "/order-history", label: "Historial de pedidos", icon: "≣" },
+  { to: "/reconciliation", label: "Conciliación", icon: "✓" }
 ];
 
 export function AppLayout({ admin, onLogout }) {

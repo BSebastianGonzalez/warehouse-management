@@ -19,6 +19,20 @@ function getErrorMessage(body, status) {
   return "No se pudo completar la solicitud.";
 }
 
+function toQueryString(parameters = {}) {
+  const query = new URLSearchParams();
+  Object.entries(parameters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      const normalized = (key === "from" || key === "to") && typeof value === "string" && !/[zZ]|[+-]\d\d:\d\d$/.test(value)
+        ? `${value}:00Z`
+        : value;
+      query.set(key, normalized);
+    }
+  });
+  const result = query.toString();
+  return result ? `?${result}` : "";
+}
+
 export async function request(path, options = {}) {
   const response = await fetch(`${API_URL}${path}`, {
     credentials: "include",
@@ -32,6 +46,7 @@ export async function request(path, options = {}) {
   if (!response.ok) {
     throw new ApiError(getErrorMessage(body, response.status), response.status, body);
   }
+
   return body;
 }
 
@@ -57,15 +72,18 @@ export const api = {
   },
   stocks: {
     list: () => request("/stocks"),
-    byProduct: (productId) => request(`/stocks/products/${productId}`)
+    byProduct: (productId) => request(`/stocks/products/${productId}`),
+    reconcile: (productId, warehouseId) => request(`/stocks/products/${productId}/warehouses/${warehouseId}/reconciliation`)
   },
   movements: {
     inbound: (data) => request("/movements/inbound", { method: "POST", body: JSON.stringify(data) }),
     outbound: (data) => request("/movements/outbound", { method: "POST", body: JSON.stringify(data) }),
-    transfer: (data) => request("/movements/transfers", { method: "POST", body: JSON.stringify(data) })
+    transfer: (data) => request("/movements/transfers", { method: "POST", body: JSON.stringify(data) }),
+    list: (filters = {}, page = 0, size = 10) => request(`/movements${toQueryString({ ...filters, page, size, sort: "createdAt,desc" })}`)
   },
   orders: {
     create: (data) => request("/orders", { method: "POST", body: JSON.stringify(data) }),
+    list: (filters = {}, page = 0, size = 10) => request(`/orders${toQueryString({ ...filters, page, size, sort: "createdAt,desc" })}`),
     findById: (id) => request(`/orders/${id}`)
   }
 };
