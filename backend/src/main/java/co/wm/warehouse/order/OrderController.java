@@ -5,6 +5,10 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -24,8 +28,21 @@ public class OrderController {
         return orderService.create(request, adminService.requireAuthenticated(session));
     }
 
+    @GetMapping
+    public Page<OrderSummaryResponse> findAll(
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) Long administratorId,
+            @RequestParam(required = false) java.time.Instant from,
+            @RequestParam(required = false) java.time.Instant to,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            HttpSession session) {
+        adminService.requireAuthenticated(session);
+        return orderService.findAll(status, administratorId, from, to, pageable);
+    }
+
     @GetMapping("/{id}")
-    public OrderResponse findById(@PathVariable Long id) {
+    public OrderResponse findById(@PathVariable Long id, HttpSession session) {
+        adminService.requireAuthenticated(session);
         return orderService.findById(id);
     }
 }

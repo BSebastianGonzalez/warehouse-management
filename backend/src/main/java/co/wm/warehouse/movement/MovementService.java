@@ -11,7 +11,12 @@ import co.wm.warehouse.warehouse.WarehouseNotFoundException;
 import co.wm.warehouse.warehouse.WarehouseRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.JoinType;
 import java.util.Objects;
+import java.time.Instant;
 
 @Service
 public class MovementService {
@@ -41,6 +46,52 @@ public class MovementService {
         Movement movement = movementRepository.save(new Movement(
                 MovementType.INBOUND, product, administrator, null, warehouse, request.quantity(), request.reference()));
         return MovementResponse.from(movement);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<MovementReadResponse> findAll(
+            MovementType type,
+            Long productId,
+            Long warehouseId,
+            Long administratorId,
+            Instant from,
+            Instant to,
+            String reference,
+            Pageable pageable) {
+        Specification<Movement> specification = Specification.where((Specification<Movement>) null);
+        if (type != null) {
+            specification = specification.and((root, query, builder) -> builder.equal(root.get("type"), type));
+        }
+        if (productId != null) {
+            specification = specification.and((root, query, builder) ->
+                    builder.equal(root.get("product").get("id"), productId));
+        }
+        if (warehouseId != null) {
+            specification = specification.and((root, query, builder) -> {
+                var source = root.join("sourceWarehouse", JoinType.LEFT);
+                var destination = root.join("destinationWarehouse", JoinType.LEFT);
+                return builder.or(
+                        builder.equal(source.get("id"), warehouseId),
+                        builder.equal(destination.get("id"), warehouseId));
+            });
+        }
+        if (administratorId != null) {
+            specification = specification.and((root, query, builder) ->
+                    builder.equal(root.get("administrator").get("id"), administratorId));
+        }
+        if (from != null) {
+            specification = specification.and((root, query, builder) ->
+                    builder.greaterThanOrEqualTo(root.get("createdAt"), from));
+        }
+        if (to != null) {
+            specification = specification.and((root, query, builder) ->
+                    builder.lessThanOrEqualTo(root.get("createdAt"), to));
+        }
+        if (reference != null && !reference.isBlank()) {
+            specification = specification.and((root, query, builder) ->
+                    builder.like(builder.lower(root.get("reference")), "%" + reference.trim().toLowerCase() + "%"));
+        }
+        return movementRepository.findAll(specification, pageable).map(MovementReadResponse::from);
     }
 
     @Transactional

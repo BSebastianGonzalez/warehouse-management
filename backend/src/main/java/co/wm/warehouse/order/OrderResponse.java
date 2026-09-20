@@ -8,6 +8,7 @@ public record OrderResponse(
         Instant createdAt,
         OrderStatus status,
         Long administratorId,
+        String administratorUsername,
         List<OrderLineResponse> lines) {
 
     public static OrderResponse from(Order order) {
@@ -16,6 +17,7 @@ public record OrderResponse(
                 order.getCreatedAt(),
                 order.getStatus(),
                 order.getAdministratorId(),
+                order.getAdministratorUsername(),
                 order.getLines().stream().map(OrderLineResponse::from).toList());
     }
 }

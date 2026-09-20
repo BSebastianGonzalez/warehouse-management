@@ -18,6 +18,10 @@ import co.wm.warehouse.movement.MovementType;
 import co.wm.warehouse.movement.InsufficientStockException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.Instant;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 @Service
 public class OrderService {
@@ -86,6 +90,32 @@ public class OrderService {
     public OrderResponse findById(Long id) {
         return OrderResponse.from(orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id)));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<OrderSummaryResponse> findAll(
+            OrderStatus status,
+            Long administratorId,
+            Instant from,
+            Instant to,
+            Pageable pageable) {
+        Specification<Order> specification = Specification.where((Specification<Order>) null);
+        if (status != null) {
+            specification = specification.and((root, query, builder) -> builder.equal(root.get("status"), status));
+        }
+        if (administratorId != null) {
+            specification = specification.and((root, query, builder) ->
+                    builder.equal(root.get("administrator").get("id"), administratorId));
+        }
+        if (from != null) {
+            specification = specification.and((root, query, builder) ->
+                    builder.greaterThanOrEqualTo(root.get("createdAt"), from));
+        }
+        if (to != null) {
+            specification = specification.and((root, query, builder) ->
+                    builder.lessThanOrEqualTo(root.get("createdAt"), to));
+        }
+        return orderRepository.findAll(specification, pageable).map(OrderSummaryResponse::from);
     }
 
     private PreparedLine prepareLine(OrderLineRequest request) {

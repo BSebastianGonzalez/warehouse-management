@@ -62,5 +62,6 @@ public class Order {
     public Instant getCreatedAt() { return createdAt; }
     public OrderStatus getStatus() { return status; }
     public Long getAdministratorId() { return administrator.getId(); }
+    public String getAdministratorUsername() { return administrator.getUsername(); }
     public List<OrderLine> getLines() { return List.copyOf(lines); }
 }
