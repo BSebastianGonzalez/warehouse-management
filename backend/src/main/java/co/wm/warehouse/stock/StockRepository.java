@@ -1,6 +1,7 @@
 package co.wm.warehouse.stock;
 
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -12,6 +13,20 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     Optional<Stock> findByProductIdAndWarehouseId(Long productId, Long warehouseId);
 
     java.util.List<Stock> findAllByProductId(Long productId);
+
+    @Query("""
+            select stock from Stock stock
+            join fetch stock.warehouse
+            where stock.product.id = :productId
+            """)
+    List<Stock> findAllByProductIdWithWarehouse(@Param("productId") Long productId);
+
+    @Query("""
+            select stock from Stock stock
+            join fetch stock.product
+            join fetch stock.warehouse
+            """)
+    List<Stock> findAllWithProductAndWarehouse();
 
     @Modifying
     @Query(value = """

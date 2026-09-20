@@ -10,6 +10,7 @@ import co.wm.warehouse.warehouse.WarehouseNotFoundException;
 import co.wm.warehouse.warehouse.WarehouseRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 @Service
 public class MovementService {
@@ -53,7 +54,7 @@ public class MovementService {
 
     @Transactional
     public MovementResponse transfer(TransferRequest request) {
-        if (request.sourceWarehouseId().equals(request.destinationWarehouseId())) {
+        if (Objects.equals(request.sourceWarehouseId(), request.destinationWarehouseId())) {
             throw new InvalidMovementException("Source and destination warehouses must be different");
         }
         Product product = findProduct(request.productId());
@@ -75,7 +76,10 @@ public class MovementService {
     }
 
     private void incrementStock(Product product, Warehouse warehouse, Integer quantity) {
-        stockRepository.incrementOrCreate(product.getId(), warehouse.getId(), quantity);
+        int updatedRows = stockRepository.incrementOrCreate(product.getId(), warehouse.getId(), quantity);
+        if (updatedRows <= 0) {
+            throw new InvalidMovementException("Stock could not be updated");
+        }
     }
 
     private Product findProduct(Long id) {

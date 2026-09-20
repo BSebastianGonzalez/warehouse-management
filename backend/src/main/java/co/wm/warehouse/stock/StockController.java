@@ -22,6 +22,13 @@ public class StockController {
         return stockService.find(productId, warehouseId);
     }
 
+    @GetMapping("/products/{productId}/warehouses/{warehouseId}/reconciliation")
+    public StockReconciliationResponse reconcile(
+            @PathVariable Long productId,
+            @PathVariable Long warehouseId) {
+        return stockService.reconcile(productId, warehouseId);
+    }
+
     @GetMapping
     public List<ProductStockResponse> findAllProducts() {
         return stockService.findAllProducts();

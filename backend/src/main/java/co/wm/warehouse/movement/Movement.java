@@ -16,9 +16,17 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
+import org.hibernate.annotations.Check;
 
 @Entity
 @Table(name = "movements")
+@Check(name = "ck_movements_warehouse_roles", constraints = """
+        (type = 'INBOUND' and source_warehouse_id is null and destination_warehouse_id is not null)
+        or (type = 'OUTBOUND' and source_warehouse_id is not null and destination_warehouse_id is null)
+        or (type = 'TRANSFER' and source_warehouse_id is not null and destination_warehouse_id is not null
+            and source_warehouse_id <> destination_warehouse_id)
+        """)
+@Check(name = "ck_movements_quantity_positive", constraints = "quantity > 0")
 public class Movement {
 
     @Id
@@ -58,7 +66,7 @@ public class Movement {
             Warehouse destinationWarehouse,
             Integer quantity,
             String reference) {
-        validate(type, sourceWarehouse, destinationWarehouse, quantity);
+        validate(type, product, sourceWarehouse, destinationWarehouse, quantity);
         this.type = type;
         this.product = product;
         this.sourceWarehouse = sourceWarehouse;
@@ -70,11 +78,12 @@ public class Movement {
 
     private void validate(
             MovementType type,
+            Product product,
             Warehouse sourceWarehouse,
             Warehouse destinationWarehouse,
             Integer quantity) {
-        if (type == null || quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Movement type and positive quantity are required");
+        if (type == null || product == null || quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Movement type, product and positive quantity are required");
         }
         if (type == MovementType.INBOUND && (sourceWarehouse != null || destinationWarehouse == null)
                 || type == MovementType.OUTBOUND && (sourceWarehouse == null || destinationWarehouse != null)

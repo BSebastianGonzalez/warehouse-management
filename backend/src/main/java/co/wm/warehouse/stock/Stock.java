@@ -12,9 +12,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import org.hibernate.annotations.Check;
 
 @Entity
 @Table(name = "stocks", uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "warehouse_id"}))
+@Check(constraints = "quantity >= 0")
 public class Stock {
 
     @Id
@@ -53,6 +55,13 @@ public class Stock {
             throw new IllegalArgumentException("Stock increase must be positive");
         }
         quantity += amount;
+    }
+
+    public void decrease(Integer amount) {
+        if (amount == null || amount <= 0 || amount > quantity) {
+            throw new IllegalArgumentException("Stock decrease must be positive and available");
+        }
+        quantity -= amount;
     }
 
     public Long getProductId() {

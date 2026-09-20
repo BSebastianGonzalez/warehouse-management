@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 
@@ -69,5 +70,25 @@ class MovementServiceTest {
         assertThatThrownBy(() -> movementService.inbound(new MovementRequest(1L, 1L, 2, "receipt")))
                 .isInstanceOf(InvalidMovementException.class);
         verify(warehouseRepository, never()).findById(1L);
+    }
+
+    @Test
+    void createsInboundMovementAfterUpdatingStock() {
+        Product product = org.mockito.Mockito.mock(Product.class);
+        Warehouse warehouse = org.mockito.Mockito.mock(Warehouse.class);
+        when(product.getId()).thenReturn(1L);
+        when(product.isDiscontinued()).thenReturn(false);
+        when(warehouse.getId()).thenReturn(1L);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+        when(stockRepository.incrementOrCreate(1L, 1L, 4)).thenReturn(1);
+        when(movementRepository.save(any(Movement.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MovementResponse response = movementService.inbound(
+                new MovementRequest(1L, 1L, 4, "receipt"));
+
+        assertThat(response.type()).isEqualTo(MovementType.INBOUND);
+        assertThat(response.quantity()).isEqualTo(4);
+        verify(movementRepository).save(any(Movement.class));
     }
 }
