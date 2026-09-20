@@ -142,3 +142,37 @@ En la rama funcional siguiente se implemento el fundamento de esta regla:
 - Las operaciones de movimiento requieren una sesion autenticada.
 - `Movement` guarda `administrator_id` y las respuestas exponen el administrador responsable
   sin exponer su contraseña.
+
+## 7. Pedidos sincronicos
+
+Se inicio el modulo de pedidos en la rama `feature/synchronous-orders`:
+
+- `Order`, `OrderLine` y `DispatchDetail` persisten el pedido, sus lineas y el desglose
+  por bodega.
+- `POST /api/orders` requiere sesion de administrador y evalua todas las lineas antes de
+  descontar inventario.
+- Un pedido insuficiente queda `CANCELLED`, conserva `missingQuantity` y no genera salidas
+  ni detalles de despacho.
+- Un pedido completo queda `DISPATCHED` y puede consumir una linea desde varias bodegas.
+- Cada salida generada por el pedido conserva la trazabilidad del administrador y referencia
+  el pedido.
+- `GET /api/orders/{id}` consulta el detalle resultante.
+
+La implementacion mantiene la transaccion unica y reutiliza el descuento condicional de
+existencias para que una carrera de concurrencia revierta el pedido completo.
+
+## 8. Interfaz React inicial
+
+Se agrego `frontend/` como aplicacion React/Vite para operar el backend existente:
+
+- inicio de sesion y cierre de sesion usando la cookie de `HttpSession`;
+- dashboard de existencias por producto y bodega, con alerta de minimo;
+- formulario para registrar entradas, salidas y traslados;
+- manejo visible de errores y respuestas de la API;
+- configuracion de CORS restringida al origen local `http://localhost:5173`.
+
+La interfaz usa `VITE_API_URL` para cambiar la URL del backend sin modificar el codigo.
+
+La compilacion de frontend y la suite Maven del backend fueron ejecutadas correctamente. Se mantiene
+`ddl-auto=update` solo como decision de desarrollo local; Flyway queda como paso obligatorio antes
+de compartir o desplegar el esquema.

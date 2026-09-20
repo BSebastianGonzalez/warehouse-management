@@ -71,4 +71,8 @@ public class Stock {
     public Long getWarehouseId() {
         return warehouse.getId();
     }
+
+    public Warehouse getWarehouse() {
+        return warehouse;
+    }
 }
