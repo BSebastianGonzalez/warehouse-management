@@ -97,3 +97,32 @@ No se permiten despachos parciales. En caso de cancelación, no se generan `Desp
 **Rechacé:** utilizar microservicios, debido a que introducirían complejidad adicional sin ser necesarios para el alcance del sistema.
 
 **Quedó sin verificar:** la estructura concreta de paquetes y clases una vez que comience la implementación del backend.
+
+---
+
+# Sesion 3 - 19/09/2026
+
+## Auditoria y correccion del nucleo Stock/Movement
+
+Se revisaron `AGENTS.md`, `ASSUMPTIONS.md`, los ADR de arquitectura y concurrencia, y la
+implementacion existente de `Stock` y `Movement`.
+
+Se corrigio lo siguiente:
+
+- `Stock` y `Product` validan sus cantidades tambien desde el modelo Java y declaran
+  restricciones `CHECK` para impedir cantidades negativas.
+- `Movement` valida producto, cantidad y combinaciones de bodegas, y declara restricciones
+  persistentes para las reglas de `INBOUND`, `OUTBOUND` y `TRANSFER`.
+- La consulta por producto ahora incluye todas las bodegas, incluso cuando la existencia es
+  cero; las consultas con producto o bodega inexistentes responden con el error de recurso no
+  encontrado en lugar de inventar un saldo cero.
+- El resumen general carga stocks y bodegas en bloque para evitar el patron N+1.
+- Se agrego una consulta de reconstruccion desde `Movement` y un endpoint de reconciliacion para
+  comparar el saldo proyectado de `Stock` con el saldo historico.
+- La actualizacion atomica de incrementos ahora verifica que la operacion haya afectado filas.
+- Se agregaron pruebas para una entrada exitosa y se conservaron las pruebas de rechazos existentes.
+
+La base de datos actual utiliza MySQL, por lo que el incremento/creacion atomico sigue usando
+`INSERT ... ON DUPLICATE KEY UPDATE`. La asociacion obligatoria con `Admin` permanece como el
+siguiente incremento porque requiere implementar primero la sesion HTTP y no se debe inventar un
+administrador dentro de los movimientos.
