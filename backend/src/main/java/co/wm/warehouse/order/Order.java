@@ -18,6 +18,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 @Entity
 @Table(name = "orders")
@@ -36,6 +38,7 @@ public class Order {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "administrator_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private Admin administrator;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -61,7 +64,7 @@ public class Order {
     public Long getId() { return id; }
     public Instant getCreatedAt() { return createdAt; }
     public OrderStatus getStatus() { return status; }
-    public Long getAdministratorId() { return administrator.getId(); }
-    public String getAdministratorUsername() { return administrator.getUsername(); }
+    public Long getAdministratorId() { return administrator == null ? null : administrator.getId(); }
+    public String getAdministratorUsername() { return administrator == null ? null : administrator.getUsername(); }
     public List<OrderLine> getLines() { return List.copyOf(lines); }
 }
